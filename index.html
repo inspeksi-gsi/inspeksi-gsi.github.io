@@ -321,13 +321,6 @@
   </div>
 </main>
 
-<nav id="navUtama" aria-label="Menu" hidden>
-  <div class="wadah">
-    <button type="button" data-utama="input" aria-current="page">Input</button>
-    <button type="button" data-utama="display">Display</button>
-  </div>
-</nav>
-
 <nav id="navAdmin" aria-label="Menu admin" hidden>
   <div class="wadah">
     <button type="button" data-tab="rekap" aria-current="page">Rekap</button>
@@ -378,7 +371,6 @@
   var saring = 'belum';
   var unitTerbuka = null;
   var modeTampil = 'mekanik';
-  var tabUtama = 'input';
   var dataDisplay = null;
   var bulanDisplay = '';
   var saringDisplay = 'semua';
@@ -692,7 +684,7 @@
   }
 
   function lihatDisplay() {
-    return modeTampil === 'display' || (modeTampil === 'mekanik' && tabUtama === 'display');
+    return modeTampil === 'display';
   }
 
   // ---------- Halaman admin ----------
@@ -910,21 +902,16 @@
     modeTampil = mode;
     modeAdmin = admin;
     var display = lihatDisplay();
-    var input = mode === 'mekanik' && !display;
+    var input = mode === 'mekanik';
     $('pesan').hidden = true;
     $('pilihNama').hidden = !input;
     $('tabAbsen').hidden = !input;
     $('tabDisplay').hidden = !display;
-    $('navUtama').hidden = mode !== 'mekanik';
     document.body.classList.toggle('modeLebar', display);
-    document.querySelectorAll('#navUtama button').forEach(function (b) {
-      if (b.getAttribute('data-utama') === tabUtama) b.setAttribute('aria-current', 'page');
-      else b.removeAttribute('aria-current');
-    });
     $('masukAdmin').hidden = !admin || !!password;
     $('panelAdmin').hidden = !admin || !password;
     $('navAdmin').hidden = !admin || !password;
-    document.body.classList.toggle('adaNav', mode === 'mekanik' || (admin && !!password));
+    document.body.classList.toggle('adaNav', admin && !!password);
     $('gantiContoh').textContent = admin ? 'Lihat halaman mekanik' : 'Lihat halaman admin';
     if (admin) {
       $('subjudul').textContent = 'Admin';
@@ -951,13 +938,6 @@
   $('tutup').addEventListener('click', function () { $('lembar').close(); });
   $('salinLink').addEventListener('click', salinLink);
   $('gantiContoh').addEventListener('click', function () { aturMode(modeAdmin ? 'mekanik' : 'admin'); });
-  document.querySelectorAll('#navUtama button').forEach(function (b) {
-    b.addEventListener('click', function () {
-      tabUtama = b.getAttribute('data-utama');
-      aturMode('mekanik');
-      window.scrollTo(0, 0);
-    });
-  });
   document.querySelectorAll('[data-saring-disp]').forEach(function (b) {
     b.addEventListener('click', function () {
       saringDisplay = b.getAttribute('data-saring-disp');
