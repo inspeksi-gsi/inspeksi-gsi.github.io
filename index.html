@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inspeksi Unit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --kuning: #F6B800;
+    --grafit: #23262A;
+    --baja: #E4E8EB;
+    --garis: #C3CAD0;
+    --abu: #565E66;
+    --putih: #FFFFFF;
+    --hijau: #0B7A4B;
+    --merah: #B62A17;
+    --judul: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+    --isi: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--baja);
+    color: var(--grafit);
+    font: 400 16px/1.45 var(--isi);
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  body.adaNav { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--grafit); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .wadah { max-width: 520px; margin: 0 auto; }
+
+  /* Kepala */
+  header { background: var(--kuning); }
+  .kepala { padding: 16px 16px 14px; }
+  h1 { font: 700 32px/1.05 var(--judul); margin: 0; }
+  .sub { margin: 3px 0 0; font-weight: 500; }
+  .strip {
+    height: 8px;
+    background: repeating-linear-gradient(-45deg, var(--grafit) 0 12px, var(--kuning) 12px 24px);
+  }
+  .demo {
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 10px;
+    background: var(--grafit); color: var(--putih);
+    font-size: 14px; padding: 7px 16px; text-align: center;
+  }
+  .demo button { min-height: 32px; padding: 0 4px; background: none; border: 0; color: var(--kuning); font-weight: 600; text-decoration: underline; }
+  .label { display: block; font-weight: 600; margin-bottom: 5px; }
+  .kepala .label { margin-top: 12px; }
+  input, textarea {
+    width: 100%; min-height: 50px; padding: 10px 12px;
+    background: var(--putih); border: 2px solid var(--grafit); border-radius: 6px;
+  }
+  textarea { min-height: 84px; resize: vertical; }
+  #nama { font-weight: 600; }
+
+  main { padding: 14px 12px 16px; }
+  .cari { margin-bottom: 12px; }
+  .cari input { border-color: var(--garis); }
+
+  /* Kartu unit dengan tiga lubang pons */
+  .daftar { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .kartu {
+    width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center;
+    padding: 11px 14px; background: var(--putih); text-align: left;
+    border: 0; border-left: 6px solid var(--garis); border-radius: 6px;
+  }
+  button.kartu:active { background: #FFF4CC; }
+  .kartu.tercapai { border-left-color: var(--hijau); }
+  .kartu.sudah { opacity: .72; }
+  .kode { font: 700 28px/1.05 var(--judul); overflow-wrap: anywhere; }
+  .ket { grid-column: 1 / -1; font-size: 14px; color: var(--abu); }
+  .ket.temuan { color: var(--merah); font-weight: 600; }
+
+  .lubang { display: flex; gap: 7px; }
+  .lubang i {
+    width: 24px; height: 24px; border-radius: 50%; display: block;
+    border: 2px dashed #8A939B; background: transparent;
+  }
+  .lubang i.isi { border: 2px solid var(--grafit); background: var(--grafit); box-shadow: inset 0 2px 3px #000; }
+  .tercapai .lubang i.isi { border-color: var(--hijau); background: var(--hijau); box-shadow: inset 0 2px 3px #04492c; }
+  .lubang i.baru { animation: pons .4s cubic-bezier(.2, 1.6, .4, 1); }
+  @keyframes pons { from { transform: scale(2.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .lebih { font: 600 15px/24px var(--judul); color: var(--hijau); }
+
+  .kosong { padding: 22px 16px; background: var(--putih); border-radius: 6px; }
+  .kosong p { margin: 0; }
+
+  /* Admin */
+  .masuk { padding: 16px; background: var(--putih); border-radius: 6px; }
+  .masuk p { margin: 0 0 12px; }
+  .masuk .tombol { margin-top: 12px; }
+  .tombol {
+    display: block; width: 100%; min-height: 54px; padding: 15px 12px; text-align: center; text-decoration: none;
+    background: var(--kuning); color: var(--grafit); border: 0; border-radius: 6px;
+    font: 700 22px/1.1 var(--judul);
+  }
+  .tombol:disabled { opacity: .55; cursor: default; }
+  .tombol.kedua { background: var(--putih); border: 2px solid var(--grafit); padding: 13px 12px; }
+  .bulan { display: grid; grid-template-columns: 50px 1fr 50px; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .bulan button {
+    min-height: 50px; background: var(--putih); border: 2px solid var(--grafit); border-radius: 6px;
+    font-size: 22px; font-weight: 600;
+  }
+  .bulan button:disabled { opacity: .35; cursor: default; }
+  .bulan strong { font: 700 24px/1.1 var(--judul); text-align: center; }
+  .capaian { background: var(--grafit); color: var(--putih); padding: 14px 16px; border-radius: 6px; margin-bottom: 12px; }
+  .capaian b { display: block; font: 700 32px/1.1 var(--judul); }
+  .capaian span { color: #D5DADF; }
+  .batang { height: 10px; margin-top: 10px; background: #474C52; border-radius: 5px; overflow: hidden; }
+  .batang div { height: 100%; background: var(--kuning); }
+  .saring { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+  .saring button {
+    min-height: 44px; background: transparent; border: 2px solid var(--garis); border-radius: 6px; font-weight: 600;
+  }
+  .saring button[aria-pressed=true] { background: var(--kuning); border-color: var(--kuning); }
+  h2 { font: 700 23px/1.1 var(--judul); margin: 22px 0 8px; }
+  details.kartu { display: block; padding: 0; }
+  details.kartu summary {
+    list-style: none; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px;
+    align-items: center; padding: 11px 14px; cursor: pointer;
+  }
+  details.kartu summary::-webkit-details-marker { display: none; }
+  .rincian { margin: 0; padding: 0 14px 10px; list-style: none; border-top: 1px solid var(--baja); }
+  .rincian li { padding: 8px 0; border-bottom: 1px solid var(--baja); }
+  .rincian li:last-child { border-bottom: 0; }
+  .rincian b { font-weight: 600; }
+  .rincian small { display: block; font-size: 14px; color: var(--abu); }
+  .rincian small.temuan { color: var(--merah); }
+  .orang { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 11px 14px; background: var(--putih); border-radius: 6px; }
+  .orang b { font-weight: 600; overflow-wrap: anywhere; }
+
+  .tautan { display: grid; gap: 8px; margin-bottom: 14px; }
+  .linkApp { padding: 12px 14px; background: var(--putih); border-radius: 6px; }
+  .linkApp code { display: block; margin-bottom: 8px; font-family: var(--isi); font-size: 14px; color: var(--abu); overflow-wrap: anywhere; user-select: all; }
+  .jumlah { margin: 0 0 8px; font-weight: 600; }
+  .baris { padding: 10px 14px; background: var(--putih); border-radius: 6px; border-left: 6px solid var(--garis); }
+  .baris.ditemukan { border-left-color: var(--merah); }
+  .baris-atas { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .baris-atas .kode { font-size: 24px; }
+  .baris-atas time { font-size: 14px; color: var(--abu); white-space: nowrap; }
+  .baris p { margin: 2px 0 0; overflow-wrap: anywhere; }
+  .baris .nama { font-weight: 600; }
+  .baris .kecil { font-size: 14px; color: var(--abu); }
+  .baris .temuan { font-size: 14px; color: var(--merah); font-weight: 600; }
+
+  /* Tab bawah admin */
+  nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    background: var(--grafit); padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav .wadah { display: grid; grid-template-columns: 1fr 1fr; }
+  nav button {
+    min-height: 62px; background: none; border: 0; color: var(--putih);
+    font: 700 21px/1 var(--judul); border-top: 5px solid transparent;
+  }
+  nav button[aria-current=page] { border-top-color: var(--kuning); color: var(--kuning); }
+
+  /* Lembar isian */
+  dialog {
+    width: 100%; max-width: 520px; margin: auto auto 0; padding: 0; border: 0;
+    border-radius: 12px 12px 0 0; background: var(--putih); color: var(--grafit);
+    max-height: 92vh; max-height: 92dvh;
+  }
+  dialog::backdrop { background: rgba(35, 38, 42, .6); }
+  dialog form { padding: 16px 16px calc(18px + env(safe-area-inset-bottom)); }
+  .judul-form { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .judul-form h2 { font-size: 34px; margin: 0; overflow-wrap: anywhere; }
+  .tutup { min-height: 44px; padding: 0 12px; background: none; border: 2px solid var(--garis); border-radius: 6px; font-weight: 600; }
+  .info { margin: 0 0 12px; padding: 9px 12px; background: #FFF4CC; border-radius: 6px; font-size: 15px; }
+  .ruas { margin-bottom: 13px; }
+  .pilih { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pilih button { min-height: 50px; background: var(--putih); border: 2px solid var(--garis); border-radius: 6px; font-weight: 600; }
+  .pilih button[aria-pressed=true] { background: var(--grafit); border-color: var(--grafit); color: var(--putih); }
+  .pilih button.temuan[aria-pressed=true] { background: var(--merah); border-color: var(--merah); }
+  .salah { margin: 10px 0 0; color: var(--merah); font-weight: 600; }
+  dialog .salah { margin: 0 0 12px; }
+
+  .pesan {
+    position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 6;
+    max-width: 496px; margin: 0 auto; padding: 13px 15px; border-radius: 6px;
+    background: var(--hijau); color: var(--putih); font-weight: 600;
+  }
+  body.adaNav .pesan { bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .pesan.gagal { background: var(--merah); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lubang i.baru { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div id="demo" class="demo" hidden>
+  <span>Contoh tampilan. Data di sini tidak tersimpan.</span>
+  <button type="button" id="gantiContoh"></button>
+</div>
+<header>
+  <div class="wadah kepala">
+    <h1>Inspeksi Unit</h1>
+    <p class="sub" id="subjudul">Memuat data…</p>
+    <div id="pilihNama" hidden>
+      <label class="label" for="nama">Nama mekanik</label>
+      <input type="text" id="nama" list="daftarNama" maxlength="60" placeholder="Tulis nama Anda" autocomplete="name" autocapitalize="words">
+      <datalist id="daftarNama"></datalist>
+    </div>
+  </div>
+  <div class="strip"></div>
+</header>
+
+<main class="wadah">
+  <!-- Halaman mekanik -->
+  <section id="tabAbsen" hidden>
+    <div class="cari">
+      <label class="label" for="cari">Pilih unit yang diinspeksi</label>
+      <input type="search" id="cari" placeholder="Cari kode unit" autocomplete="off" autocapitalize="characters">
+    </div>
+    <ul class="daftar" id="daftarUnit"></ul>
+  </section>
+
+  <!-- Halaman admin -->
+  <section id="masukAdmin" hidden>
+    <form class="masuk" id="formAdmin" novalidate>
+      <label class="label" for="password">Password admin</label>
+      <input type="password" id="password" autocomplete="current-password">
+      <p class="salah" id="salahAdmin" role="alert" hidden></p>
+      <button type="submit" class="tombol" id="tombolMasuk">Masuk</button>
+    </form>
+  </section>
+
+  <div id="panelAdmin" hidden>
+    <div class="bulan">
+      <button type="button" id="bulanLalu" aria-label="Bulan sebelumnya">‹</button>
+      <strong id="labelBulan"></strong>
+      <button type="button" id="bulanDepan" aria-label="Bulan berikutnya">›</button>
+    </div>
+
+    <section id="tabRekap">
+      <div class="capaian">
+        <b id="capaianUnit"></b>
+        <span id="capaianInspeksi"></span>
+        <div class="batang"><div id="batangIsi" style="width:0"></div></div>
+      </div>
+      <div class="saring" role="group" aria-label="Saring unit">
+        <button type="button" data-saring="belum" aria-pressed="true">Belum</button>
+        <button type="button" data-saring="tercapai" aria-pressed="false">Tercapai</button>
+        <button type="button" data-saring="semua" aria-pressed="false">Semua</button>
+      </div>
+      <ul class="daftar" id="daftarRekap"></ul>
+      <h2>Per mekanik</h2>
+      <ul class="daftar" id="daftarOrang"></ul>
+    </section>
+
+    <section id="tabDatabase" hidden>
+      <div class="tautan">
+        <a class="tombol" id="bukaSheet" target="_blank" rel="noopener">Buka database di Google Sheet</a>
+        <div class="linkApp">
+          <span class="label">Link absen untuk mekanik</span>
+          <code id="linkApp"></code>
+          <button type="button" class="tombol kedua" id="salinLink">Salin link</button>
+        </div>
+      </div>
+      <div class="cari">
+        <label class="label" for="cariData">Cari absen</label>
+        <input type="search" id="cariData" placeholder="Unit, nama, atau temuan" autocomplete="off">
+      </div>
+      <p class="jumlah" id="jumlahData"></p>
+      <ul class="daftar" id="daftarData"></ul>
+    </section>
+  </div>
+</main>
+
+<nav id="navAdmin" aria-label="Menu admin" hidden>
+  <div class="wadah">
+    <button type="button" data-tab="rekap" aria-current="page">Rekap</button>
+    <button type="button" data-tab="database">Database</button>
+  </div>
+</nav>
+
+<dialog id="lembar" aria-labelledby="judulUnit">
+  <form id="form" novalidate>
+    <div class="judul-form">
+      <h2 id="judulUnit"></h2>
+      <button type="button" class="tutup" id="tutup">Batal</button>
+    </div>
+    <p class="info" id="infoForm" hidden></p>
+    <div class="ruas">
+      <label class="label" for="hm" id="labelHm">HM unit</label>
+      <input id="hm" inputmode="decimal" autocomplete="off">
+    </div>
+    <div class="ruas">
+      <span class="label" id="labelKondisi">Kondisi unit</span>
+      <div class="pilih" role="group" aria-labelledby="labelKondisi">
+        <button type="button" data-kondisi="Normal" aria-pressed="true">Normal</button>
+        <button type="button" data-kondisi="Ada temuan" class="temuan" aria-pressed="false">Ada temuan</button>
+      </div>
+    </div>
+    <div class="ruas">
+      <label class="label" for="catatan" id="labelCatatan">Catatan (boleh kosong)</label>
+      <textarea id="catatan" maxlength="500"></textarea>
+    </div>
+    <p class="salah" id="salah" role="alert" hidden></p>
+    <button type="submit" class="tombol" id="simpan">SUBMIT</button>
+  </form>
+</dialog>
+
+<div class="pesan" id="pesan" role="status" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var API_URL = 'https://script.google.com/macros/s/AKfycbzhgmFzfMVkWczu_imv2BqSX_fXNxcbp3uIo4Mh27vmfEQtuGxnU6poC_K8rlp18Y9P/exec';
+  var PAKAI_GOOGLE = !!(window.google && google.script && google.script.run);
+  var DEMO = !PAKAI_GOOGLE && !API_URL;
+  var KUNCI_NAMA = 'inspeksiUnit.nama';
+
+  var data = null;        // halaman mekanik
+  var dataAdmin = null;   // halaman admin
+  var password = '';
+  var bulanAdmin = '';
+  var saring = 'belum';
+  var unitTerbuka = null;
+  var kondisi = 'Normal';
+  var lubangBaru = '';
+  var timerPesan = 0;
+  var modeAdmin = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- Sambungan ke server ----------
+  function panggil(fungsi, argumen) {
+    if (DEMO) return Promise.resolve(contoh[fungsi](argumen));
+    if (!PAKAI_GOOGLE) {
+      // credentials omit: permintaan tidak membawa akun Google yang login di HP.
+      return fetch(API_URL, {
+        method: 'POST',
+        credentials: 'omit',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ fn: fungsi, arg: argumen })
+      }).then(function (r) {
+        if (!r.ok) throw new Error('Server tidak merespons. Coba lagi sebentar lagi.');
+        return r.json();
+      }, function () {
+        throw new Error('Data gagal dimuat. Periksa sinyal, lalu buka ulang halaman ini.');
+      }).then(function (h) {
+        if (h && h.error) throw new Error(h.error);
+        return h;
+      });
+    }
+    return new Promise(function (berhasil, gagal) {
+      var run = google.script.run.withSuccessHandler(berhasil).withFailureHandler(gagal);
+      if (argumen === undefined) run[fungsi](); else run[fungsi](argumen);
+    });
+  }
+
+  // ---------- Hitungan ----------
+  /** Satu tanggal dihitung satu inspeksi, walau dua mekanik absen untuk unit yang sama. */
+  function ringkas(d) {
+    var per = {};
+    d.units.forEach(function (u) { per[u] = { unit: u, tanggal: {}, baris: [], temuan: 0 }; });
+    d.records.forEach(function (r) {
+      var p = per[r.unit];
+      if (!p) return;
+      p.tanggal[r.date] = true;
+      p.baris.push(r);
+      if (r.cond === 'Ada temuan') p.temuan++;
+    });
+    return d.units.map(function (u) {
+      var p = per[u];
+      p.jumlah = Object.keys(p.tanggal).length;
+      p.tercapai = p.jumlah >= d.target;
+      return p;
+    });
+  }
+
+  function rapikanNama(s) {
+    return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase()
+      .replace(/(^|[\s'-])\S/g, function (h) { return h.toUpperCase(); });
+  }
+  function samaNama(a, b) { return rapikanNama(a) === rapikanNama(b); }
+  function urutKode(a, b) { return a.localeCompare(b, 'id', { numeric: true }); }
+  function hariBulan(tgl) { return Number(tgl.slice(8, 10)); }
+  function tanggalPanjang(tgl) { return hariBulan(tgl) + ' ' + BULAN[Number(tgl.slice(5, 7)) - 1]; }
+  function labelBulan(b) { return BULAN[Number(b.slice(5, 7)) - 1] + ' ' + b.slice(0, 4); }
+  function geserBulan(b, n) {
+    var y = Number(b.slice(0, 4)), m = Number(b.slice(5, 7)) - 1 + n;
+    y += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
+    return y + '-' + String(m + 1).padStart(2, '0');
+  }
+
+  function buat(tag, kelas, isi) {
+    var el = document.createElement(tag);
+    if (kelas) el.className = kelas;
+    if (isi !== undefined) el.textContent = isi;
+    return el;
+  }
+
+  function kartuKosong(teks) {
+    var li = buat('li', 'kosong');
+    li.appendChild(buat('p', '', teks));
+    return li;
+  }
+
+  function buatLubang(p, target, kode) {
+    var w = buat('span', 'lubang');
+    w.setAttribute('role', 'img');
+    w.setAttribute('aria-label', p.jumlah + ' dari ' + target + ' inspeksi');
+    for (var i = 0; i < target; i++) {
+      var o = buat('i', i < p.jumlah ? 'isi' : '');
+      if (kode && kode === p.unit && i === p.jumlah - 1) o.classList.add('baru');
+      w.appendChild(o);
+    }
+    if (p.jumlah > target) w.appendChild(buat('span', 'lebih', '+' + (p.jumlah - target)));
+    return w;
+  }
+
+  // ---------- Halaman mekanik ----------
+  function tampilkanAbsen() {
+    if (!data) return;
+    var kata = $('cari').value.trim().toLowerCase();
+    var nama = $('nama').value;
+    var daftar = ringkas(data).filter(function (p) {
+      return !kata || p.unit.toLowerCase().indexOf(kata) >= 0;
+    });
+    daftar.sort(function (a, b) {
+      return (a.tercapai - b.tercapai) || (a.jumlah - b.jumlah) || urutKode(a.unit, b.unit);
+    });
+
+    var ul = $('daftarUnit');
+    ul.textContent = '';
+    daftar.forEach(function (p) {
+      var hariIni = p.baris.filter(function (r) { return r.date === data.today; });
+      var sudahSaya = rapikanNama(nama).length > 1 && hariIni.some(function (r) { return samaNama(r.mech, nama); });
+      var li = buat('li');
+      var k = buat('button', 'kartu');
+      k.type = 'button';
+      if (p.tercapai) k.classList.add('tercapai');
+      if (sudahSaya) k.classList.add('sudah');
+      k.appendChild(buat('span', 'kode', p.unit));
+      k.appendChild(buatLubang(p, data.target, lubangBaru));
+
+      var ket = '';
+      if (sudahSaya) ket = 'Anda sudah absen hari ini';
+      else if (hariIni.length) ket = 'Hari ini: ' + hariIni[0].mech;
+      else if (p.tercapai) ket = 'Target bulan ini tercapai';
+      if (ket) k.appendChild(buat('span', 'ket', ket));
+
+      k.addEventListener('click', function () { bukaLembar(p); });
+      li.appendChild(k);
+      ul.appendChild(li);
+    });
+    lubangBaru = '';
+
+    if (!daftar.length) {
+      ul.appendChild(kartuKosong(data.units.length
+        ? 'Unit tidak ditemukan. Periksa kode yang dicari.'
+        : 'Belum ada unit. Isi daftar unit di sheet Unit.'));
+    }
+  }
+
+  function bukaLembar(p) {
+    var nama = rapikanNama($('nama').value);
+    if (nama.length < 2) {
+      tampilkanPesan('Tulis nama Anda dulu.', true);
+      window.scrollTo(0, 0);
+      $('nama').focus();
+      return;
+    }
+    var hariIni = p.baris.filter(function (r) { return r.date === data.today; });
+    if (hariIni.some(function (r) { return samaNama(r.mech, nama); })) {
+      tampilkanPesan('Anda sudah absen untuk unit ' + p.unit + ' hari ini.', true);
+      return;
+    }
+
+    unitTerbuka = p.unit;
+    $('judulUnit').textContent = p.unit;
+    $('hm').value = '';
+    $('catatan').value = '';
+    $('salah').hidden = true;
+    aturKondisi('Normal');
+
+    var info = '';
+    if (hariIni.length) {
+      info = hariIni[0].mech + ' sudah absen di unit ini hari ini. Absen Anda ikut tercatat, hitungan unit tetap 1 inspeksi.';
+    } else if (p.tercapai) {
+      info = 'Unit ini sudah ' + p.jumlah + 'x bulan ini. Absen tetap dicatat.';
+    }
+    $('infoForm').textContent = info;
+    $('infoForm').hidden = !info;
+    $('labelHm').textContent = data.requireHm ? 'HM unit' : 'HM unit (boleh kosong)';
+    $('lembar').showModal();
+  }
+
+  function aturKondisi(nilai) {
+    kondisi = nilai;
+    document.querySelectorAll('[data-kondisi]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-kondisi') === nilai));
+    });
+    $('labelCatatan').textContent = nilai === 'Ada temuan' ? 'Tulis temuannya' : 'Catatan (boleh kosong)';
+  }
+
+  function tampilkanSalah(teks) {
+    $('salah').textContent = teks;
+    $('salah').hidden = false;
+  }
+
+  function kirim(e) {
+    e.preventDefault();
+    var hm = $('hm').value.trim();
+    var catatan = $('catatan').value.trim();
+    if (data.requireHm && !hm) { tampilkanSalah('Isi HM unit.'); $('hm').focus(); return; }
+    if (kondisi === 'Ada temuan' && !catatan) { tampilkanSalah('Tulis temuannya di catatan.'); $('catatan').focus(); return; }
+
+    var unit = unitTerbuka;
+    var tombol = $('simpan');
+    tombol.disabled = true;
+    tombol.textContent = 'Menyimpan…';
+    $('salah').hidden = true;
+
+    panggil('submitAbsen', {
+      mekanik: $('nama').value, unit: unit, hm: hm, kondisi: kondisi, catatan: catatan
+    }).then(function (hasil) {
+      if (!hasil.ok) { tampilkanSalah(hasil.message); return; }
+      $('lembar').close();
+      data = hasil.data;
+      lubangBaru = unit;
+      $('nama').value = rapikanNama($('nama').value);
+      simpanNama();
+      isiSaranNama();
+      $('cari').value = '';
+      tampilkanAbsen();
+      window.scrollTo(0, 0);
+      tampilkanPesan('Absen unit ' + unit + ' tersimpan.');
+    }).catch(function () {
+      tampilkanSalah('Absen belum tersimpan. Periksa sinyal, lalu tekan SUBMIT lagi.');
+    }).then(function () {
+      tombol.disabled = false;
+      tombol.textContent = 'SUBMIT';
+    });
+  }
+
+  function simpanNama() {
+    try { localStorage.setItem(KUNCI_NAMA, $('nama').value); } catch (e) {}
+  }
+
+  function isiSaranNama() {
+    var unik = {};
+    data.records.forEach(function (r) { unik[r.mech] = true; });
+    var dl = $('daftarNama');
+    dl.textContent = '';
+    Object.keys(unik).sort().forEach(function (n) {
+      var o = buat('option');
+      o.value = n;
+      dl.appendChild(o);
+    });
+  }
+
+  function muat() {
+    return panggil('getData').then(function (d) {
+      data = d;
+      $('subjudul').textContent = labelBulan(d.month) + ', target ' + d.target + 'x per unit';
+      isiSaranNama();
+      tampilkanAbsen();
+    }).catch(function (err) {
+      $('subjudul').textContent = 'Data gagal dimuat';
+      var ul = $('daftarUnit');
+      ul.textContent = '';
+      ul.appendChild(kartuKosong((err && err.message) || 'Periksa sinyal, lalu buka ulang halaman ini.'));
+    });
+  }
+
+  // ---------- Halaman admin ----------
+  function masukAdmin(e) {
+    e.preventDefault();
+    var isi = $('password').value;
+    if (!isi) { salahAdmin('Isi password admin.'); return; }
+    var tombol = $('tombolMasuk');
+    tombol.disabled = true;
+    $('salahAdmin').hidden = true;
+    panggil('getAdminData', { password: isi, bulan: '' }).then(function (h) {
+      if (!h.ok) { salahAdmin(h.message); return; }
+      password = isi;
+      terimaAdmin(h);
+      $('password').value = '';
+      $('masukAdmin').hidden = true;
+      $('panelAdmin').hidden = false;
+      $('navAdmin').hidden = false;
+      document.body.classList.add('adaNav');
+    }).catch(function (err) {
+      salahAdmin((err && err.message) || 'Gagal masuk. Periksa sinyal lalu coba lagi.');
+    }).then(function () { tombol.disabled = false; });
+  }
+
+  function salahAdmin(teks) {
+    $('salahAdmin').textContent = teks;
+    $('salahAdmin').hidden = false;
+  }
+
+  function terimaAdmin(h) {
+    dataAdmin = h.data;
+    bulanAdmin = h.data.month;
+    $('bukaSheet').href = h.sheetUrl;
+    $('linkApp').textContent = PAKAI_GOOGLE || DEMO ? h.appUrl : location.origin + location.pathname;
+    tampilkanRekap();
+    tampilkanDatabase();
+  }
+
+  function bukaBulan(b) {
+    bulanAdmin = b;
+    $('labelBulan').textContent = labelBulan(b);
+    panggil('getAdminData', { password: password, bulan: b }).then(function (h) {
+      if (bulanAdmin !== b) return;
+      if (!h.ok) { tampilkanPesan(h.message, true); return; }
+      terimaAdmin(h);
+    }).catch(function () {
+      tampilkanPesan('Data gagal dimuat. Periksa sinyal lalu coba lagi.', true);
+    });
+  }
+
+  function tampilkanRekap() {
+    var d = dataAdmin;
+    if (!d) return;
+    var semua = ringkas(d);
+    var tercapai = semua.filter(function (p) { return p.tercapai; }).length;
+    var targetTotal = semua.length * d.target;
+    var inspeksi = semua.reduce(function (n, p) { return n + Math.min(p.jumlah, d.target); }, 0);
+
+    $('labelBulan').textContent = labelBulan(d.month);
+    $('bulanDepan').disabled = d.month >= d.today.slice(0, 7);
+    $('capaianUnit').textContent = tercapai + ' dari ' + semua.length + ' unit sudah ' + d.target + 'x';
+
+    var teks = 'Inspeksi ' + inspeksi + ' dari ' + targetTotal;
+    if (d.month === d.today.slice(0, 7)) {
+      var akhir = new Date(Number(d.month.slice(0, 4)), Number(d.month.slice(5, 7)), 0).getDate();
+      var sisa = akhir - hariBulan(d.today);
+      teks += sisa > 0 ? ', sisa ' + sisa + ' hari' : ', hari terakhir bulan ini';
+    }
+    $('capaianInspeksi').textContent = teks;
+    $('batangIsi').style.width = (targetTotal ? Math.round(inspeksi / targetTotal * 100) : 0) + '%';
+
+    var tampil = semua.filter(function (p) {
+      return saring === 'semua' || (saring === 'tercapai' ? p.tercapai : !p.tercapai);
+    }).sort(function (a, b) { return (a.jumlah - b.jumlah) || urutKode(a.unit, b.unit); });
+
+    var ul = $('daftarRekap');
+    ul.textContent = '';
+    tampil.forEach(function (p) {
+      var li = buat('li');
+      var det = buat('details', 'kartu');
+      if (p.tercapai) det.classList.add('tercapai');
+      var sum = buat('summary');
+      sum.appendChild(buat('span', 'kode', p.unit));
+      sum.appendChild(buatLubang(p, d.target));
+
+      var tgl = Object.keys(p.tanggal).sort().map(hariBulan);
+      var ket = tgl.length ? 'Tanggal ' + tgl.join(', ') : 'Belum diinspeksi bulan ini';
+      if (p.temuan) ket += ', ' + p.temuan + ' temuan';
+      sum.appendChild(buat('span', p.temuan ? 'ket temuan' : 'ket', ket));
+      det.appendChild(sum);
+
+      if (p.baris.length) {
+        var rinci = buat('ul', 'rincian');
+        p.baris.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })
+          .forEach(function (r) {
+            var b = buat('li');
+            b.appendChild(buat('b', '', tanggalPanjang(r.date) + ', ' + r.mech));
+            b.appendChild(buat('small', '', 'HM ' + (r.hm || 'tidak diisi') + ', ' + (r.cond || 'Normal')));
+            if (r.note) b.appendChild(buat('small', r.cond === 'Ada temuan' ? 'temuan' : '', r.note));
+            rinci.appendChild(b);
+          });
+        det.appendChild(rinci);
+      }
+      li.appendChild(det);
+      ul.appendChild(li);
+    });
+    if (!tampil.length) {
+      ul.appendChild(kartuKosong(saring === 'belum' ? 'Semua unit sudah mencapai target.' : 'Belum ada unit yang mencapai target.'));
+    }
+
+    var per = {};
+    d.records.forEach(function (r) { per[r.mech] = (per[r.mech] || 0) + 1; });
+    var orang = Object.keys(per).sort(function (a, b) { return per[b] - per[a] || a.localeCompare(b, 'id'); });
+    var uo = $('daftarOrang');
+    uo.textContent = '';
+    orang.forEach(function (n) {
+      var li = buat('li', 'orang');
+      li.appendChild(buat('b', '', n));
+      li.appendChild(buat('span', '', per[n] + ' absen'));
+      uo.appendChild(li);
+    });
+    if (!orang.length) uo.appendChild(kartuKosong('Belum ada absen di bulan ini.'));
+  }
+
+  function tampilkanDatabase() {
+    var d = dataAdmin;
+    if (!d) return;
+    var kata = $('cariData').value.trim().toLowerCase();
+    var isi = d.records.filter(function (r) {
+      return !kata || [r.unit, r.mech, r.cond, r.note, r.date].join(' ').toLowerCase().indexOf(kata) >= 0;
+    }).sort(function (a, b) {
+      var x = b.date + b.time, y = a.date + a.time;
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+
+    $('jumlahData').textContent = isi.length + ' absen';
+    var ul = $('daftarData');
+    ul.textContent = '';
+    isi.forEach(function (r) {
+      var temuan = r.cond === 'Ada temuan';
+      var li = buat('li', temuan ? 'baris ditemukan' : 'baris');
+      var atas = buat('div', 'baris-atas');
+      atas.appendChild(buat('span', 'kode', r.unit));
+      atas.appendChild(buat('time', '', tanggalPanjang(r.date) + (r.time ? ', ' + r.time : '')));
+      li.appendChild(atas);
+      li.appendChild(buat('p', 'nama', r.mech));
+      li.appendChild(buat('p', 'kecil', 'HM ' + (r.hm || 'tidak diisi') + ', ' + (r.cond || 'Normal')));
+      if (r.note) li.appendChild(buat('p', temuan ? 'temuan' : 'kecil', r.note));
+      ul.appendChild(li);
+    });
+    if (!isi.length) ul.appendChild(kartuKosong(kata ? 'Tidak ada absen yang cocok.' : 'Belum ada absen di bulan ini.'));
+  }
+
+  function gantiTab(tab) {
+    document.querySelectorAll('#navAdmin button').forEach(function (b) {
+      if (b.getAttribute('data-tab') === tab) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
+    });
+    $('tabRekap').hidden = tab !== 'rekap';
+    $('tabDatabase').hidden = tab !== 'database';
+    $('pesan').hidden = true;
+    window.scrollTo(0, 0);
+  }
+
+  function salinLink() {
+    var teks = $('linkApp').textContent;
+    function gagal() { tampilkanPesan('Salin gagal. Tekan lama link di atas untuk menyalin.', true); }
+    if (!navigator.clipboard) { gagal(); return; }
+    navigator.clipboard.writeText(teks).then(function () { tampilkanPesan('Link tersalin.'); }, gagal);
+  }
+
+  // ---------- Umum ----------
+  function tampilkanPesan(teks, gagal) {
+    var p = $('pesan');
+    p.textContent = teks;
+    p.classList.toggle('gagal', !!gagal);
+    p.hidden = false;
+    clearTimeout(timerPesan);
+    timerPesan = setTimeout(function () { p.hidden = true; }, 3500);
+  }
+
+  function aturMode(admin) {
+    modeAdmin = admin;
+    $('pesan').hidden = true;
+    $('pilihNama').hidden = admin;
+    $('tabAbsen').hidden = admin;
+    $('masukAdmin').hidden = !admin || !!password;
+    $('panelAdmin').hidden = !admin || !password;
+    $('navAdmin').hidden = !admin || !password;
+    document.body.classList.toggle('adaNav', admin && !!password);
+    $('gantiContoh').textContent = admin ? 'Lihat halaman mekanik' : 'Lihat halaman admin';
+    if (admin) {
+      $('subjudul').textContent = 'Admin';
+      if (DEMO && !password) {
+        $('password').value = 'contoh';
+      }
+    } else {
+      muat();
+    }
+  }
+
+  // ---------- Peristiwa ----------
+  $('nama').addEventListener('input', function () { simpanNama(); tampilkanAbsen(); });
+  $('nama').addEventListener('blur', function () { $('nama').value = rapikanNama($('nama').value); simpanNama(); });
+  $('cari').addEventListener('input', tampilkanAbsen);
+  $('cariData').addEventListener('input', tampilkanDatabase);
+  $('form').addEventListener('submit', kirim);
+  $('form').addEventListener('input', function () { $('salah').hidden = true; });
+  $('formAdmin').addEventListener('submit', masukAdmin);
+  $('tutup').addEventListener('click', function () { $('lembar').close(); });
+  $('salinLink').addEventListener('click', salinLink);
+  $('gantiContoh').addEventListener('click', function () { aturMode(!modeAdmin); });
+  document.querySelectorAll('[data-kondisi]').forEach(function (b) {
+    b.addEventListener('click', function () { aturKondisi(b.getAttribute('data-kondisi')); });
+  });
+  document.querySelectorAll('#navAdmin button').forEach(function (b) {
+    b.addEventListener('click', function () { gantiTab(b.getAttribute('data-tab')); });
+  });
+  document.querySelectorAll('[data-saring]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      saring = b.getAttribute('data-saring');
+      document.querySelectorAll('[data-saring]').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      tampilkanRekap();
+    });
+  });
+  $('bulanLalu').addEventListener('click', function () { bukaBulan(geserBulan(bulanAdmin, -1)); });
+  $('bulanDepan').addEventListener('click', function () { bukaBulan(geserBulan(bulanAdmin, 1)); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && !modeAdmin && !$('lembar').open) muat();
+  });
+
+  // ---------- Contoh tampilan (hanya saat dibuka di luar Google) ----------
+  var contoh = (function () {
+    if (!DEMO) return null;
+    var kini = new Date();
+    var bulanIni = kini.getFullYear() + '-' + String(kini.getMonth() + 1).padStart(2, '0');
+    var hari = kini.getDate();
+    var today = bulanIni + '-' + String(hari).padStart(2, '0');
+    function tgl(n) { return bulanIni + '-' + String(Math.max(1, Math.min(n, hari))).padStart(2, '0'); }
+    var units = ['D09','D10','D12','D13','D21','D23','D24','D28','D31','D33','D39','D40','D41','D42','D45','D49','D50','D51','D56','D57','D58','D59','D60','D61','L36','L37','L38','L44','L46','L52','L53','L54','L55','D04','D14','D15','D35','D47','D48','L16','L43'];
+    var records = [
+      { time: '08:10', date: tgl(1), unit: 'D23', mech: 'Mekanik A', hm: '12450', cond: 'Normal', note: '' },
+      { time: '09:05', date: tgl(2), unit: 'D23', mech: 'Mekanik B', hm: '12461', cond: 'Normal', note: '' },
+      { time: '10:20', date: tgl(3), unit: 'D23', mech: 'Mekanik A', hm: '12473', cond: 'Normal', note: '' },
+      { time: '13:40', date: tgl(2), unit: 'L46', mech: 'Mekanik B', hm: '8320', cond: 'Ada temuan', note: 'Hose hidrolik rembes' },
+      { time: '14:15', date: tgl(3), unit: 'D31', mech: 'Mekanik A', hm: '6104', cond: 'Normal', note: '' }
+    ];
+    function bulan(b) {
+      var m = b || bulanIni;
+      return {
+        today: today, month: m, target: 3, requireHm: true, units: units,
+        records: records.filter(function (r) { return r.date.slice(0, 7) === m; })
+      };
+    }
+    return {
+      getData: function () { return bulan(); },
+      submitAbsen: function (i) {
+        records.push({ time: '07:00', date: today, unit: i.unit, mech: rapikanNama(i.mekanik), hm: String(i.hm), cond: i.kondisi, note: i.catatan });
+        return { ok: true, data: bulan() };
+      },
+      getAdminData: function (i) {
+        if (i.password !== 'contoh') return { ok: false, message: 'Password salah. Lihat sheet Pengaturan, sel B1.' };
+        return { ok: true, data: bulan(i.bulan), sheetUrl: 'https://docs.google.com/spreadsheets/', appUrl: 'Link absen muncul di sini setelah aplikasi dipasang' };
+      }
+    };
+  })();
+
+  // ---------- Mulai ----------
+  try { $('nama').value = localStorage.getItem(KUNCI_NAMA) || ''; } catch (e) {}
+  if (DEMO) {
+    $('demo').hidden = false;
+    aturMode(location.hash === '#admin');
+  } else if (!PAKAI_GOOGLE) {
+    aturMode(new URLSearchParams(location.search).has('admin'));
+  } else {
+    google.script.url.getLocation(function (lokasi) {
+      aturMode(Object.prototype.hasOwnProperty.call(lokasi.parameter || {}, 'admin'));
+    });
+  }
+})();
+</script>
+</body>
+</html>
