@@ -261,13 +261,13 @@
       <div class="tautan">
         <a class="tombol" id="bukaSheet" target="_blank" rel="noopener">Buka database di Google Sheet</a>
         <div class="linkApp">
-          <span class="label">Link absen untuk mekanik</span>
+          <span class="label">Link inspeksi untuk mekanik</span>
           <code id="linkApp"></code>
           <button type="button" class="tombol kedua" id="salinLink">Salin link</button>
         </div>
       </div>
       <div class="cari">
-        <label class="label" for="cariData">Cari absen</label>
+        <label class="label" for="cariData">Cari inspeksi</label>
         <input type="search" id="cariData" placeholder="Unit, nama, atau temuan" autocomplete="off">
       </div>
       <p class="jumlah" id="jumlahData"></p>
@@ -367,7 +367,7 @@
   }
 
   // ---------- Hitungan ----------
-  /** Satu tanggal dihitung satu inspeksi, walau dua mekanik absen untuk unit yang sama. */
+  /** Satu tanggal dihitung satu inspeksi, walau dua mekanik menginput unit yang sama. */
   function ringkas(d) {
     var per = {};
     d.units.forEach(function (u) { per[u] = { unit: u, tanggal: {}, baris: [], temuan: 0 }; });
@@ -453,7 +453,7 @@
       k.appendChild(buatLubang(p, data.target, lubangBaru));
 
       var ket = '';
-      if (sudahSaya) ket = 'Anda sudah absen hari ini';
+      if (sudahSaya) ket = 'Anda sudah input hari ini';
       else if (hariIni.length) ket = 'Hari ini: ' + hariIni[0].mech;
       else if (p.tercapai) ket = 'Target bulan ini tercapai';
       if (ket) k.appendChild(buat('span', 'ket', ket));
@@ -502,11 +502,11 @@
     var info = '';
     $('salah').hidden = true;
     if (sama.some(function (r) { return samaNama(r.mech, $('nama').value); })) {
-      tampilkanSalah('Anda sudah absen untuk unit ' + p.unit + ' tanggal ' + tanggalPanjang(tgl) + '. Pilih tanggal lain.');
+      tampilkanSalah('Anda sudah input inspeksi unit ' + p.unit + ' tanggal ' + tanggalPanjang(tgl) + '. Pilih tanggal lain.');
     } else if (sama.length) {
-      info = sama[0].mech + ' sudah absen di unit ini pada tanggal itu. Absen Anda ikut tercatat, hitungan unit tetap 1 inspeksi.';
+      info = sama[0].mech + ' sudah input inspeksi unit ini pada tanggal itu. Data Anda ikut tercatat, hitungan unit tetap 1 inspeksi.';
     } else if (p.tercapai) {
-      info = 'Unit ini sudah ' + p.jumlah + 'x bulan ini. Absen tetap dicatat.';
+      info = 'Unit ini sudah ' + p.jumlah + 'x bulan ini. Data tetap dicatat.';
     }
     $('infoForm').textContent = info;
     $('infoForm').hidden = !info;
@@ -553,9 +553,9 @@
       $('cari').value = '';
       tampilkanAbsen();
       window.scrollTo(0, 0);
-      tampilkanPesan('Absen unit ' + unit + ' tanggal ' + tanggalPanjang(tanggal) + ' tersimpan.');
+      tampilkanPesan('Inspeksi unit ' + unit + ' tanggal ' + tanggalPanjang(tanggal) + ' tersimpan.');
     }).catch(function () {
-      tampilkanSalah('Absen belum tersimpan. Periksa sinyal, lalu tekan SUBMIT lagi.');
+      tampilkanSalah('Inspeksi belum tersimpan. Periksa sinyal, lalu tekan SUBMIT lagi.');
     }).then(function () {
       tombol.disabled = false;
       tombol.textContent = 'SUBMIT';
@@ -708,10 +708,10 @@
     orang.forEach(function (n) {
       var li = buat('li', 'orang');
       li.appendChild(buat('b', '', n));
-      li.appendChild(buat('span', '', per[n] + ' absen'));
+      li.appendChild(buat('span', '', per[n] + ' inspeksi'));
       uo.appendChild(li);
     });
-    if (!orang.length) uo.appendChild(kartuKosong('Belum ada absen di bulan ini.'));
+    if (!orang.length) uo.appendChild(kartuKosong('Belum ada inspeksi di bulan ini.'));
   }
 
   function tampilkanDatabase() {
@@ -725,7 +725,7 @@
       return x < y ? -1 : x > y ? 1 : 0;
     });
 
-    $('jumlahData').textContent = isi.length + ' absen';
+    $('jumlahData').textContent = isi.length + ' inspeksi';
     var ul = $('daftarData');
     ul.textContent = '';
     isi.forEach(function (r) {
@@ -741,7 +741,7 @@
       if (r.note) li.appendChild(buat('p', temuan ? 'temuan' : 'kecil', r.note));
       ul.appendChild(li);
     });
-    if (!isi.length) ul.appendChild(kartuKosong(kata ? 'Tidak ada absen yang cocok.' : 'Belum ada absen di bulan ini.'));
+    if (!isi.length) ul.appendChild(kartuKosong(kata ? 'Tidak ada inspeksi yang cocok.' : 'Belum ada inspeksi di bulan ini.'));
   }
 
   function gantiTab(tab) {
@@ -853,14 +853,14 @@
       submitAbsen: function (i) {
         var nama = rapikanNama(i.mekanik);
         if (records.some(function (r) { return r.date === i.tanggal && r.unit === i.unit && r.mech === nama; })) {
-          return { ok: false, message: 'Anda sudah absen untuk unit ' + i.unit + ' pada tanggal itu.' };
+          return { ok: false, message: 'Anda sudah input inspeksi unit ' + i.unit + ' pada tanggal itu.' };
         }
         records.push({ time: '07:00', inputDate: today, date: i.tanggal, unit: i.unit, mech: nama, hm: String(i.hm), cond: i.kondisi, note: i.catatan });
         return { ok: true, data: bulan() };
       },
       getAdminData: function (i) {
         if (i.password !== 'contoh') return { ok: false, message: 'Password salah. Lihat sheet Pengaturan, sel B1.' };
-        return { ok: true, data: bulan(i.bulan), sheetUrl: 'https://docs.google.com/spreadsheets/', appUrl: 'Link absen muncul di sini setelah aplikasi dipasang' };
+        return { ok: true, data: bulan(i.bulan), sheetUrl: 'https://docs.google.com/spreadsheets/', appUrl: 'Link muncul di sini setelah aplikasi dipasang' };
       }
     };
   })();
