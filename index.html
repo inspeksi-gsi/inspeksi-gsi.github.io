@@ -145,6 +145,12 @@
   .baris-atas time { font-size: 14px; color: var(--abu); white-space: nowrap; }
   .baris p { margin: 2px 0 0; overflow-wrap: anywhere; }
   .baris .nama { font-weight: 600; }
+  .aksi { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+  .aksi span { font-weight: 600; }
+  .aksi button { min-height: 42px; padding: 0 14px; background: none; border: 2px solid var(--garis); border-radius: 6px; font-weight: 600; }
+  .aksi button.hapus { color: var(--merah); border-color: var(--merah); }
+  .aksi button.yakin { background: var(--merah); border-color: var(--merah); color: var(--putih); }
+  .aksi button:disabled { opacity: .55; cursor: default; }
   .baris .kecil { font-size: 14px; color: var(--abu); }
 
   /* Display */
@@ -817,9 +823,54 @@
       if (r.inputDate) li.appendChild(buat('p', 'kecil', 'Diinput ' + tanggalPanjang(r.inputDate) + (r.time ? ', ' + r.time : '')));
       li.appendChild(buat('p', 'kecil', 'HM ' + (r.hm || 'tidak diisi')));
       if (r.note) li.appendChild(buat('p', 'kecil', r.note));
+      li.appendChild(buatAksiHapus(r));
       ul.appendChild(li);
     });
     if (!isi.length) ul.appendChild(kartuKosong(kata ? 'Tidak ada inspeksi yang cocok.' : 'Belum ada inspeksi di bulan ini.'));
+  }
+
+  /** Tombol Hapus dengan langkah konfirmasi di baris yang sama. */
+  function buatAksiHapus(r) {
+    var aksi = buat('div', 'aksi');
+    var label = 'unit ' + r.unit + ' tanggal ' + tanggalPanjang(r.date);
+
+    function tanya() {
+      aksi.textContent = '';
+      aksi.appendChild(buat('span', '', 'Hapus inspeksi ini?'));
+      var ya = buat('button', 'yakin', 'Ya, hapus');
+      var batal = buat('button', '', 'Batal');
+      ya.type = batal.type = 'button';
+      batal.addEventListener('click', awal);
+      ya.addEventListener('click', function () {
+        ya.disabled = batal.disabled = true;
+        ya.textContent = 'Menghapus…';
+        panggil('hapusInspeksi', {
+          password: password, row: r.row, unit: r.unit, date: r.date, mech: r.mech, bulan: bulanAdmin
+        }).then(function (h) {
+          if (!h.ok) { tampilkanPesan(h.message, true); bukaBulan(bulanAdmin); return; }
+          terimaAdmin(h);
+          tampilkanPesan('Inspeksi ' + label + ' dihapus.');
+        }).catch(function () {
+          tampilkanPesan('Data belum terhapus. Periksa sinyal lalu coba lagi.', true);
+          awal();
+        });
+      });
+      aksi.appendChild(ya);
+      aksi.appendChild(batal);
+      batal.focus();
+    }
+
+    function awal() {
+      aksi.textContent = '';
+      var hapus = buat('button', 'hapus', 'Hapus');
+      hapus.type = 'button';
+      hapus.setAttribute('aria-label', 'Hapus inspeksi ' + label);
+      hapus.addEventListener('click', tanya);
+      aksi.appendChild(hapus);
+    }
+
+    awal();
+    return aksi;
   }
 
   function gantiTab(tab) {
@@ -969,6 +1020,10 @@
         }
         records.push({ time: '07:00', inputDate: today, date: i.tanggal, unit: i.unit, mech: nama, hm: String(i.hm), note: i.catatan });
         return { ok: true, data: bulan() };
+      },
+      hapusInspeksi: function (i) {
+        records = records.filter(function (r) { return !(r.date === i.date && r.unit === i.unit && r.mech === i.mech); });
+        return { ok: true, data: bulan(i.bulan), sheetUrl: 'https://docs.google.com/spreadsheets/', appUrl: 'Link muncul di sini setelah aplikasi dipasang' };
       },
       getAdminData: function (i) {
         if (i.password !== 'contoh') return { ok: false, message: 'Password salah. Lihat sheet Pengaturan, sel B1.' };
