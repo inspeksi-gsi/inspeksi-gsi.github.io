@@ -191,8 +191,8 @@
   /* Display */
   body.modeLebar .wadah { max-width: 1200px; }
   .bantuan { margin: 0 0 10px; font-size: 15px; color: var(--abu); }
-  #bagikanDisp { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
-  #bagikanDisp svg { width: 22px; height: 22px; flex: none; }
+  #bagikanAdmin { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
+  #bagikanAdmin svg { width: 22px; height: 22px; flex: none; }
   .diperbarui { margin: 10px 0 0; font-size: 14px; color: var(--abu); }
   .baris-unit {
     display: grid; grid-template-columns: 60px 1fr auto; gap: 8px; align-items: center;
@@ -298,7 +298,6 @@
       </div>
       <div class="batang"><div id="batangIsiDisp" style="width:0"></div></div>
     </div>
-    <button type="button" class="tombol" id="bagikanDisp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Bagikan ke WA / Email</button>
     <div class="bulan">
       <button type="button" id="bulanLaluDisp" aria-label="Bulan sebelumnya">‹</button>
       <strong id="labelBulanDisp"></strong>
@@ -337,6 +336,7 @@
         <span id="capaianInspeksi"></span>
         <div class="batang"><div id="batangIsi" style="width:0"></div></div>
       </div>
+      <button type="button" class="tombol" id="bagikanAdmin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Bagikan ke WA / Email</button>
       <div class="saring" role="group" aria-label="Saring unit">
         <button type="button" data-saring="belum" aria-pressed="true">Belum</button>
         <button type="button" data-saring="tercapai" aria-pressed="false">Tercapai</button>
@@ -908,10 +908,11 @@
     return s + '…';
   }
 
-  function bagikanDisplay() {
-    var d = dataDisplay;
+  /** Tombol bagikan ada di Admin, tetapi gambarnya sama dengan tampilan Display. */
+  function bagikanGambar() {
+    var d = dataAdmin;
     if (!d) return;
-    var tombol = $('bagikanDisp');
+    var tombol = $('bagikanAdmin');
     tombol.disabled = true;
     // Caption disalin langsung saat tombol ditekan, lalu ditempel di kolom keterangan gambar di WA.
     var caption = captionBagikan(d);
@@ -1425,7 +1426,7 @@
       tampilkanDisplay();
     });
   });
-  $('bagikanDisp').addEventListener('click', bagikanDisplay);
+  $('bagikanAdmin').addEventListener('click', bagikanGambar);
   $('bulanLaluDisp').addEventListener('click', function () { if (dataDisplay) bukaDisplay(geserBulan(dataDisplay.month, -1)); });
   $('bulanDepanDisp').addEventListener('click', function () { if (dataDisplay) bukaDisplay(geserBulan(dataDisplay.month, 1)); });
   document.querySelectorAll('#navAdmin button').forEach(function (b) {
