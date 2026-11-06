@@ -154,9 +154,21 @@
   .aksi button { min-height: 42px; padding: 0 14px; background: none; border: 2px solid var(--garis); border-radius: 6px; font-weight: 600; }
   .aksi button.hapus { color: var(--merah); border-color: var(--merah); }
   .aksi button.yakin { background: var(--merah); border-color: var(--merah); color: var(--putih); }
+  .aksi button.simpan { background: var(--kuning); border-color: var(--kuning); }
+  .form-edit { width: 100%; display: grid; gap: 10px; }
+  .form-edit .label { margin: 0; }
+  .form-edit input, .form-edit select, .form-edit textarea { width: 100%; margin-top: 5px; font-weight: 400; }
+  .form-edit select { min-height: 50px; padding: 10px 12px; background: var(--putih); border: 2px solid var(--grafit); border-radius: 6px; }
+  .form-edit .salah { margin: 0; }
+  .tombol-edit { display: flex; flex-wrap: wrap; gap: 8px; }
   .aksi button:disabled { opacity: .55; cursor: default; }
   .baris .kecil { font-size: 14px; color: var(--abu); }
 
+  .capaian-utama { display: grid; grid-template-columns: auto 1fr; gap: 2px 18px; align-items: center; margin-bottom: 14px; }
+  .capaian-utama .batang { grid-column: 1 / -1; }
+  .persen { font: 700 76px/1 var(--judul); color: var(--kuning); }
+  .capaian-utama b { font-size: 24px; }
+  .capaian-utama span { display: block; }
   /* Display */
   body.modeLebar .wadah { max-width: 1200px; }
   .bantuan { margin: 0 0 10px; font-size: 15px; color: var(--abu); }
@@ -249,15 +261,18 @@
 
   <!-- Halaman display: hanya untuk dilihat -->
   <section id="tabDisplay" hidden>
+    <div class="capaian capaian-utama">
+      <div class="persen" id="persenDisp" aria-label="Persentase pencapaian">0%</div>
+      <div>
+        <b id="capaianUnitDisp"></b>
+        <span id="capaianInspeksiDisp"></span>
+      </div>
+      <div class="batang"><div id="batangIsiDisp" style="width:0"></div></div>
+    </div>
     <div class="bulan">
       <button type="button" id="bulanLaluDisp" aria-label="Bulan sebelumnya">‹</button>
       <strong id="labelBulanDisp"></strong>
       <button type="button" id="bulanDepanDisp" aria-label="Bulan berikutnya">›</button>
-    </div>
-    <div class="capaian">
-      <b id="capaianUnitDisp"></b>
-      <span id="capaianInspeksiDisp"></span>
-      <div class="batang"><div id="batangIsiDisp" style="width:0"></div></div>
     </div>
     <div class="saring" role="group" aria-label="Saring unit">
       <button type="button" data-saring-disp="semua" aria-pressed="true">Semua</button>
@@ -623,7 +638,7 @@
   }
 
   // ---------- Halaman display ----------
-  function isiCapaian(d, semua, idUnit, idTeks, idBatang) {
+  function isiCapaian(d, semua, idUnit, idTeks, idBatang, idPersen) {
     var tercapai = semua.filter(function (p) { return p.tercapai; }).length;
     var targetTotal = semua.length * d.target;
     var inspeksi = semua.reduce(function (n, p) { return n + Math.min(p.jumlah, d.target); }, 0);
@@ -635,7 +650,9 @@
       teks += sisa > 0 ? ', sisa ' + sisa + ' hari' : ', hari terakhir bulan ini';
     }
     $(idTeks).textContent = teks;
-    $(idBatang).style.width = (targetTotal ? Math.round(inspeksi / targetTotal * 100) : 0) + '%';
+    var persen = (targetTotal ? Math.round(inspeksi / targetTotal * 100) : 0) + '%';
+    $(idBatang).style.width = persen;
+    if (idPersen) $(idPersen).textContent = persen;
   }
 
   function tampilkanDisplay() {
@@ -644,7 +661,7 @@
     var semua = ringkas(d);
     $('labelBulanDisp').textContent = labelBulan(d.month);
     $('bulanDepanDisp').disabled = d.month >= d.today.slice(0, 7);
-    isiCapaian(d, semua, 'capaianUnitDisp', 'capaianInspeksiDisp', 'batangIsiDisp');
+    isiCapaian(d, semua, 'capaianUnitDisp', 'capaianInspeksiDisp', 'batangIsiDisp', 'persenDisp');
 
     var tampil = semua.filter(function (p) {
       return saringDisplay === 'semua' || (saringDisplay === 'tercapai' ? p.tercapai : !p.tercapai);
@@ -819,14 +836,14 @@
       if (r.inputDate) li.appendChild(buat('p', 'kecil', 'Diinput ' + tanggalPanjang(r.inputDate) + (r.time ? ', ' + r.time : '')));
       li.appendChild(buat('p', 'kecil', 'HM ' + (r.hm || 'tidak diisi')));
       if (r.note) li.appendChild(buat('p', 'kecil', r.note));
-      li.appendChild(buatAksiHapus(r));
+      li.appendChild(buatAksi(r));
       ul.appendChild(li);
     });
     if (!isi.length) ul.appendChild(kartuKosong(kata ? 'Tidak ada inspeksi yang cocok.' : 'Belum ada inspeksi di bulan ini.'));
   }
 
-  /** Tombol Hapus dengan langkah konfirmasi di baris yang sama. */
-  function buatAksiHapus(r) {
+  /** Tombol Edit dan Hapus di baris yang sama. */
+  function buatAksi(r) {
     var aksi = buat('div', 'aksi');
     var label = 'unit ' + r.unit + ' tanggal ' + tanggalPanjang(r.date);
 
@@ -856,8 +873,98 @@
       batal.focus();
     }
 
+    function bukaEdit() {
+      aksi.textContent = '';
+      var f = buat('form', 'form-edit');
+      f.noValidate = true;
+
+      function ruas(judul, el) {
+        var l = buat('label', 'label', judul);
+        l.appendChild(el);
+        f.appendChild(l);
+        return el;
+      }
+
+      var tanggal = ruas('Tanggal inspeksi', buat('input'));
+      tanggal.type = 'date';
+      tanggal.max = dataAdmin.today;
+      tanggal.value = r.date;
+
+      var unit = ruas('Unit', buat('select'));
+      var pilihan = dataAdmin.units.indexOf(r.unit) < 0 ? [r.unit].concat(dataAdmin.units) : dataAdmin.units;
+      pilihan.slice().sort(urutKode).forEach(function (u) {
+        var o = buat('option', '', u);
+        o.value = u;
+        unit.appendChild(o);
+      });
+      unit.value = r.unit;
+
+      var nama = ruas('Nama mekanik', buat('input'));
+      nama.type = 'text';
+      nama.maxLength = 60;
+      nama.value = r.mech;
+
+      var hm = ruas('HM unit', buat('input'));
+      hm.inputMode = 'decimal';
+      hm.value = r.hm;
+
+      var catatan = ruas('Catatan', buat('textarea'));
+      catatan.maxLength = 500;
+      catatan.value = r.note;
+
+      var salah = buat('p', 'salah');
+      salah.setAttribute('role', 'alert');
+      salah.hidden = true;
+      f.appendChild(salah);
+
+      var tombol = buat('div', 'tombol-edit');
+      var simpan = buat('button', 'simpan', 'Simpan perubahan');
+      var batal = buat('button', '', 'Batal');
+      simpan.type = 'submit';
+      batal.type = 'button';
+      batal.addEventListener('click', awal);
+      tombol.appendChild(simpan);
+      tombol.appendChild(batal);
+      f.appendChild(tombol);
+
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!tanggal.value) { salah.textContent = 'Pilih tanggal inspeksi.'; salah.hidden = false; return; }
+        simpan.disabled = batal.disabled = true;
+        simpan.textContent = 'Menyimpan…';
+        salah.hidden = true;
+        panggil('editInspeksi', {
+          password: password, row: r.row, unit: r.unit, date: r.date, mech: r.mech, bulan: bulanAdmin,
+          baru: { tanggal: tanggal.value, unit: unit.value, mekanik: nama.value, hm: hm.value.trim(), catatan: catatan.value }
+        }).then(function (h) {
+          if (!h.ok) {
+            salah.textContent = h.message;
+            salah.hidden = false;
+            simpan.disabled = batal.disabled = false;
+            simpan.textContent = 'Simpan perubahan';
+            return;
+          }
+          terimaAdmin(h);
+          tampilkanPesan('Inspeksi unit ' + unit.value + ' diperbarui.');
+        }).catch(function () {
+          salah.textContent = 'Perubahan belum tersimpan. Periksa sinyal lalu coba lagi.';
+          salah.hidden = false;
+          simpan.disabled = batal.disabled = false;
+          simpan.textContent = 'Simpan perubahan';
+        });
+      });
+
+      aksi.appendChild(f);
+      nama.focus();
+    }
+
     function awal() {
       aksi.textContent = '';
+      var edit = buat('button', '', 'Edit');
+      edit.type = 'button';
+      edit.setAttribute('aria-label', 'Edit inspeksi ' + label);
+      edit.addEventListener('click', bukaEdit);
+      aksi.appendChild(edit);
       var hapus = buat('button', 'hapus', 'Hapus');
       hapus.type = 'button';
       hapus.setAttribute('aria-label', 'Hapus inspeksi ' + label);
@@ -967,10 +1074,10 @@
     if (document.visibilityState !== 'visible' || modeAdmin || $('lembar').open) return;
     if (lihatDisplay()) bukaDisplay(bulanDisplay); else muat();
   });
-  // Display memperbarui diri tiap 2 menit, cocok untuk layar yang dibiarkan menyala.
+  // Display memperbarui diri tiap 30 detik, cocok untuk layar yang dibiarkan menyala.
   setInterval(function () {
     if (lihatDisplay() && document.visibilityState === 'visible') bukaDisplay(bulanDisplay);
-  }, 120000);
+  }, 30000);
 
   // ---------- Contoh tampilan (hanya saat dibuka di luar Google) ----------
   var contoh = (function () {
@@ -1004,6 +1111,14 @@
         }
         records.push({ time: '07:00', inputDate: today, date: i.tanggal, unit: i.unit, mech: nama, hm: String(i.hm), note: i.catatan });
         return { ok: true, data: bulan() };
+      },
+      editInspeksi: function (i) {
+        records.forEach(function (r) {
+          if (r.date === i.date && r.unit === i.unit && r.mech === i.mech) {
+            r.date = i.baru.tanggal; r.unit = i.baru.unit; r.mech = rapikanNama(i.baru.mekanik); r.hm = i.baru.hm; r.note = i.baru.catatan;
+          }
+        });
+        return { ok: true, data: bulan(i.bulan), sheetUrl: 'https://docs.google.com/spreadsheets/', appUrl: 'Link muncul di sini setelah aplikasi dipasang' };
       },
       hapusInspeksi: function (i) {
         records = records.filter(function (r) { return !(r.date === i.date && r.unit === i.unit && r.mech === i.mech); });
