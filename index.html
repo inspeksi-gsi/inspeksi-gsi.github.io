@@ -170,6 +170,8 @@
   .kepala-kelompok { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 8px 2px; }
   .kepala-kelompok h2 { margin: 0; overflow-wrap: anywhere; }
   .kepala-kelompok span { font: 700 21px/1.1 var(--judul); white-space: nowrap; }
+  .kepala-kelompok > div { min-width: 0; }
+  .kepala-kelompok small { display: block; margin-top: 2px; font: 500 13px/1.2 var(--isi); color: var(--abu); }
   .kelompok { min-width: 0; }
   #daftarDisplay { align-items: start; gap: 8px 14px; }
   .kelompok-admin { margin-top: 14px; }
@@ -661,7 +663,26 @@
   }
 
   // ---------- Halaman display ----------
+  /** Grup Non SET dan unit yang belum punya posisi tidak masuk persentase utama. */
+  function posisiDihitung(nama) {
+    return !!nama && !/^non[\s._-]*set$/i.test(String(nama).trim());
+  }
+
+  function masukHitungan(d, p) {
+    if (!d.posisi || !d.posisi.length) return true;
+    var pos = (d.posisiUnit || {})[p.unit] || '';
+    return d.posisi.indexOf(pos) >= 0 && posisiDihitung(pos);
+  }
+
+  function judulKelompok(g) {
+    var judul = buat('div');
+    judul.appendChild(buat('h2', '', g.nama));
+    if (!g.dihitung) judul.appendChild(buat('small', '', 'Tidak masuk persentase utama'));
+    return judul;
+  }
+
   function isiCapaian(d, semua, idUnit, idTeks, idBatang, idPersen) {
+    semua = semua.filter(function (p) { return masukHitungan(d, p); });
     var tercapai = semua.filter(function (p) { return p.tercapai; }).length;
     var targetTotal = semua.length * d.target;
     var inspeksi = semua.reduce(function (n, p) { return n + Math.min(p.jumlah, d.target); }, 0);
@@ -698,7 +719,7 @@
       var sudah = g.unit.reduce(function (n, p) { return n + Math.min(p.jumlah, d.target); }, 0);
       var li = buat('li', 'kelompok');
       var kepala = buat('div', 'kepala-kelompok');
-      kepala.appendChild(buat('h2', '', g.nama));
+      kepala.appendChild(judulKelompok(g));
       kepala.appendChild(buat('span', '', Math.round(sudah / (g.unit.length * d.target) * 100) + '%'));
       li.appendChild(kepala);
       var daftar = buat('ul', 'daftar');
@@ -715,8 +736,8 @@
 
   /** Mengelompokkan unit sesuai sheet Posisi. Unit tanpa posisi tampil paling akhir. */
   function kelompokPosisi(d, semua, sertakanKosong) {
-    var daftar = d.posisi.map(function (n) { return { kunci: n, nama: n, unit: [] }; });
-    var tanpa = { kunci: '', nama: 'Belum ada posisi', unit: [] };
+    var daftar = d.posisi.map(function (n) { return { kunci: n, nama: n, unit: [], dihitung: posisiDihitung(n) }; });
+    var tanpa = { kunci: '', nama: 'Belum ada posisi', unit: [], dihitung: false };
     semua.forEach(function (p) {
       var g = daftar.filter(function (x) { return x.kunci === d.posisiUnit[p.unit]; })[0] || tanpa;
       g.unit.push(p);
@@ -1039,7 +1060,7 @@
     kelompokPosisi(d, ringkas(d), true).forEach(function (g) {
       var bagian = buat('section', 'kelompok-admin');
       var kepala = buat('div', 'kepala-kelompok');
-      kepala.appendChild(buat('h2', '', g.nama));
+      kepala.appendChild(judulKelompok(g));
       if (g.unit.length) {
         kepala.appendChild(buat('span', '', g.unit.length + ' unit'));
       } else {
@@ -1222,8 +1243,8 @@
       { time: '13:40', date: tgl(2), unit: 'L46', mech: 'Mekanik B', hm: '8320', note: 'Hose hidrolik rembes' },
       { time: '14:15', date: tgl(3), unit: 'D31', mech: 'Mekanik A', hm: '6104', note: '' }
     ];
-    var posisi = ['SET 2', 'FC. VANGUARD'];
-    var posisiUnit = { D42: 'SET 2', D51: 'SET 2', D61: 'SET 2', L55: 'SET 2', D28: 'FC. VANGUARD', D40: 'FC. VANGUARD', L36: 'FC. VANGUARD' };
+    var posisi = ['SET 2', 'SET 3', 'SET 4', 'SET 5', 'SET 1 Tarakan', 'SET 2 Tarakan', 'FC. VANGUARD', 'FC. ALPHA', 'FC. DAYSPRING', 'FC. AVANT GARDE', 'Non SET'];
+    var posisiUnit = { D42: 'SET 2', D51: 'SET 2', D61: 'SET 2', L55: 'SET 2', D39: 'SET 3', D49: 'SET 3', D59: 'SET 3', L52: 'SET 3', D56: 'SET 4', D57: 'SET 4', D60: 'SET 4', L54: 'SET 4', D45: 'SET 5', D50: 'SET 5', D58: 'SET 5', L53: 'SET 5', D15: 'SET 1 Tarakan', D47: 'SET 1 Tarakan', D48: 'SET 1 Tarakan', L43: 'SET 1 Tarakan', D04: 'SET 2 Tarakan', D14: 'SET 2 Tarakan', D35: 'SET 2 Tarakan', L16: 'SET 2 Tarakan', D28: 'FC. VANGUARD', D40: 'FC. VANGUARD', L36: 'FC. VANGUARD', D13: 'FC. ALPHA', D21: 'FC. ALPHA', L37: 'FC. ALPHA', D10: 'FC. DAYSPRING', D12: 'FC. DAYSPRING', L38: 'FC. DAYSPRING', D09: 'FC. AVANT GARDE', D33: 'FC. AVANT GARDE', L44: 'FC. AVANT GARDE', D23: 'Non SET', D24: 'Non SET', D31: 'Non SET', D41: 'Non SET', L46: 'Non SET' };
     function bulan(b) {
       var m = b || bulanIni;
       return {
