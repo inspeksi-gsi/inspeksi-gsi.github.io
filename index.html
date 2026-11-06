@@ -913,6 +913,14 @@
     if (!d) return;
     var tombol = $('bagikanDisp');
     tombol.disabled = true;
+    // Caption disalin langsung saat tombol ditekan, lalu ditempel di kolom keterangan gambar di WA.
+    var caption = captionBagikan(d);
+    var tersalin = navigator.clipboard && navigator.clipboard.writeText
+      ? navigator.clipboard.writeText(caption).then(function () { return true; }, function () { return false; })
+      : Promise.resolve(false);
+    tersalin.then(function (ok) {
+      if (ok) tampilkanPesan('Caption sudah disalin. Di WA, tempel di kolom keterangan gambar sebelum kirim.');
+    });
     var siap = document.fonts && document.fonts.load ? Promise.all([
       document.fonts.load('700 40px "Barlow Condensed"'), document.fonts.load('500 28px Barlow'), document.fonts.load('600 22px Barlow')
     ]).catch(function () {}) : Promise.resolve();
@@ -928,29 +936,25 @@
       var nama = 'Inspeksi Unit ' + labelBulan(d.month) + '.png';
       var berkas = typeof File === 'function' ? new File([h.blob], nama, { type: 'image/png' }) : null;
       if (berkas && navigator.canShare && navigator.canShare({ files: [berkas] })) {
-        return navigator.share({ files: [berkas], title: h.teks.split('\n')[0], text: h.teks })
-          .catch(function (e) { if (e && e.name !== 'AbortError') unduhGambar(h.blob, nama, h.teks); });
+        return navigator.share({ files: [berkas], title: caption.split('\n')[0] })
+          .catch(function (e) { if (e && e.name !== 'AbortError') unduhGambar(h.blob, nama, tersalin); });
       }
-      unduhGambar(h.blob, nama, h.teks);
+      unduhGambar(h.blob, nama, tersalin);
     }).catch(function () {
       tampilkanPesan('Gambar gagal dibuat. Coba lagi.', true);
     }).then(function () { tombol.disabled = false; });
   }
 
-  function unduhGambar(blob, nama, caption) {
+  function unduhGambar(blob, nama, tersalin) {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = nama;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-    var pesan = 'Gambar tersimpan. Kirim gambar itu ke WA atau email.';
-    if (caption && navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(caption).then(function () {
-        tampilkanPesan('Gambar tersimpan dan caption sudah disalin. Tempel caption saat mengirim gambar.');
-      }, function () { tampilkanPesan(pesan); });
-    } else {
-      tampilkanPesan(pesan);
-    }
+    (tersalin || Promise.resolve(false)).then(function (ok) {
+      tampilkanPesan(ok ? 'Gambar tersimpan dan caption sudah disalin. Tempel caption saat mengirim gambar.'
+        : 'Gambar tersimpan. Kirim gambar itu ke WA atau email.');
+    });
   }
 
   /** Mengelompokkan unit sesuai sheet Posisi. Unit tanpa posisi tampil paling akhir. */
