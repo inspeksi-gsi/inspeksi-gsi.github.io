@@ -46,6 +46,11 @@
   .kepala { padding: 16px 16px 14px; }
   h1 { font: 700 32px/1.05 var(--judul); margin: 0; }
   .sub { margin: 3px 0 0; font-weight: 500; }
+  .judul-kepala { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .judul-kepala > div:first-child { min-width: 0; }
+  .logo { display: flex; align-items: center; gap: 10px; flex: none; padding: 6px 10px; background: var(--putih); border-radius: 8px; }
+  .logo img { display: block; height: 44px; width: auto; }
+  @media (max-width: 350px) { .logo { gap: 6px; padding: 5px 7px; } .logo img { height: 36px; } }
   .strip {
     height: 8px;
     background: repeating-linear-gradient(-45deg, var(--grafit) 0 12px, var(--kuning) 12px 24px);
@@ -254,8 +259,16 @@
 </div>
 <header>
   <div class="wadah kepala">
-    <h1>Inspeksi Unit</h1>
-    <p class="sub" id="subjudul">Memuat data…</p>
+    <div class="judul-kepala">
+      <div>
+        <h1>Inspeksi Unit</h1>
+        <p class="sub" id="subjudul">Memuat data…</p>
+      </div>
+      <div class="logo">
+        <img id="logoGsi" alt="GSI" src="data:image/png;base64,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">
+        <img id="logoBaramulti" alt="Baramulti" src="data:image/png;base64,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">
+      </div>
+    </div>
     <div id="pilihNama" hidden>
       <label class="label" for="nama">Nama mekanik</label>
       <input type="text" id="nama" list="daftarNama" maxlength="60" placeholder="Tulis nama Anda" autocomplete="name" autocapitalize="words">
@@ -749,8 +762,19 @@
       var s = g.unit.reduce(function (n, p) { return n + Math.min(p.jumlah, d.target); }, 0);
       baris.push(g.nama + ': ' + Math.round(s / (g.unit.length * d.target) * 100) + '%' + (g.dihitung ? '' : ' (tidak dihitung)'));
     });
-    baris.push('', 'Lihat langsung: ' + location.origin + location.pathname + '?display=1');
-    return { teks: baris.join('\n'), persen: persen, sudah: sudah, target: target, hitung: hitung };
+    return { teks: captionBagikan(d), persen: persen, sudah: sudah, target: target, hitung: hitung };
+  }
+
+  /** Tanggal data: hari ini untuk bulan berjalan, tanggal terakhir untuk bulan yang sudah lewat. */
+  function tanggalData(d) {
+    if (d.month === d.today.slice(0, 7)) return d.today;
+    var akhir = new Date(Number(d.month.slice(0, 4)), Number(d.month.slice(5, 7)), 0).getDate();
+    return d.month + '-' + String(akhir).padStart(2, '0');
+  }
+
+  function captionBagikan(d) {
+    var t = tanggalData(d);
+    return 'Pencapaian Inspeksi Unit sampai dengan ' + tanggalPanjang(t) + ' ' + t.slice(0, 4) + '\nTerima kasih.';
   }
 
   function gambarDisplay(d) {
@@ -791,6 +815,19 @@
     c.fillStyle = '#F6B800';
     for (var x = -20; x < W + 20; x += 44) {
       c.beginPath(); c.moveTo(x, 168); c.lineTo(x + 18, 150); c.lineTo(x + 36, 150); c.lineTo(x + 18, 168); c.fill();
+    }
+    var logo = [$('logoGsi'), $('logoBaramulti')].filter(function (im) { return im && im.complete && im.naturalWidth; });
+    if (logo.length) {
+      var TL = 92, SELA_L = 18, PAD_L = 14;
+      var lebarL = logo.reduce(function (n, im) { return n + im.naturalWidth * TL / im.naturalHeight; }, 0) + SELA_L * (logo.length - 1);
+      var xL = W - P - lebarL - PAD_L * 2;
+      kotak(c, xL, 75 - TL / 2 - PAD_L, lebarL + PAD_L * 2, TL + PAD_L * 2, 12, '#FFFFFF');
+      xL += PAD_L;
+      logo.forEach(function (im) {
+        var lw = im.naturalWidth * TL / im.naturalHeight;
+        c.drawImage(im, xL, 75 - TL / 2, lw, TL);
+        xL += lw + SELA_L;
+      });
     }
 
     // Kotak pencapaian
@@ -879,6 +916,11 @@
     var siap = document.fonts && document.fonts.load ? Promise.all([
       document.fonts.load('700 40px "Barlow Condensed"'), document.fonts.load('500 28px Barlow'), document.fonts.load('600 22px Barlow')
     ]).catch(function () {}) : Promise.resolve();
+    siap = siap.then(function () {
+      return Promise.all([$('logoGsi'), $('logoBaramulti')].map(function (im) {
+        return im && im.decode ? im.decode().catch(function () {}) : null;
+      }));
+    });
     siap.then(function () {
       var hasil = gambarDisplay(d);
       return new Promise(function (ok) { hasil.kanvas.toBlob(function (b) { ok({ blob: b, teks: hasil.teks }); }, 'image/png'); });
@@ -886,22 +928,29 @@
       var nama = 'Inspeksi Unit ' + labelBulan(d.month) + '.png';
       var berkas = typeof File === 'function' ? new File([h.blob], nama, { type: 'image/png' }) : null;
       if (berkas && navigator.canShare && navigator.canShare({ files: [berkas] })) {
-        return navigator.share({ files: [berkas], title: 'Inspeksi Unit ' + labelBulan(d.month), text: h.teks })
-          .catch(function (e) { if (e && e.name !== 'AbortError') unduhGambar(h.blob, nama); });
+        return navigator.share({ files: [berkas], title: h.teks.split('\n')[0], text: h.teks })
+          .catch(function (e) { if (e && e.name !== 'AbortError') unduhGambar(h.blob, nama, h.teks); });
       }
-      unduhGambar(h.blob, nama);
+      unduhGambar(h.blob, nama, h.teks);
     }).catch(function () {
       tampilkanPesan('Gambar gagal dibuat. Coba lagi.', true);
     }).then(function () { tombol.disabled = false; });
   }
 
-  function unduhGambar(blob, nama) {
+  function unduhGambar(blob, nama, caption) {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = nama;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-    tampilkanPesan('Gambar tersimpan. Kirim gambar itu ke WA atau email.');
+    var pesan = 'Gambar tersimpan. Kirim gambar itu ke WA atau email.';
+    if (caption && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(caption).then(function () {
+        tampilkanPesan('Gambar tersimpan dan caption sudah disalin. Tempel caption saat mengirim gambar.');
+      }, function () { tampilkanPesan(pesan); });
+    } else {
+      tampilkanPesan(pesan);
+    }
   }
 
   /** Mengelompokkan unit sesuai sheet Posisi. Unit tanpa posisi tampil paling akhir. */
