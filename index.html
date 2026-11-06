@@ -167,6 +167,18 @@
   .capaian-utama { display: grid; grid-template-columns: auto 1fr; gap: 2px 18px; align-items: center; margin-bottom: 14px; }
   .capaian-utama .batang { grid-column: 1 / -1; }
   .persen { font: 700 76px/1 var(--judul); color: var(--kuning); }
+  .kepala-kelompok { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 8px 2px; }
+  .kepala-kelompok h2 { margin: 0; overflow-wrap: anywhere; }
+  .kepala-kelompok span { font: 700 21px/1.1 var(--judul); white-space: nowrap; }
+  .kelompok { min-width: 0; }
+  #daftarDisplay { align-items: start; gap: 8px 14px; }
+  .kelompok-admin { margin-top: 14px; }
+  .baris-tambah { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .baris-tambah .tombol { width: auto; min-height: 50px; padding: 0 18px; }
+  .baris-posisi { display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center; padding: 8px 12px; background: var(--putih); border-radius: 6px; }
+  .baris-posisi select { width: 100%; min-height: 48px; padding: 8px 10px; background: var(--putih); border: 2px solid var(--grafit); border-radius: 6px; }
+  .hapus-posisi { min-height: 40px; padding: 0 12px; background: none; border: 2px solid var(--merah); color: var(--merah); border-radius: 6px; font-weight: 600; }
+  #navAdmin .wadah { grid-template-columns: repeat(3, 1fr); }
   .capaian-utama b { font-size: 24px; }
   .capaian-utama span { display: block; }
   /* Display */
@@ -295,7 +307,7 @@
   </section>
 
   <div id="panelAdmin" hidden>
-    <div class="bulan">
+    <div class="bulan" id="navBulan">
       <button type="button" id="bulanLalu" aria-label="Bulan sebelumnya">‹</button>
       <strong id="labelBulan"></strong>
       <button type="button" id="bulanDepan" aria-label="Bulan berikutnya">›</button>
@@ -333,6 +345,16 @@
       <p class="jumlah" id="jumlahData"></p>
       <ul class="daftar" id="daftarData"></ul>
     </section>
+    <section id="tabPosisi" hidden>
+      <form id="formPosisi" novalidate>
+        <label class="label" for="namaPosisi">Tambah posisi baru</label>
+        <div class="baris-tambah">
+          <input type="text" id="namaPosisi" maxlength="40" placeholder="Contoh: SET 6" autocomplete="off">
+          <button type="submit" class="tombol">Tambah</button>
+        </div>
+      </form>
+      <div id="daftarPosisi"></div>
+    </section>
   </div>
 </main>
 
@@ -340,6 +362,7 @@
   <div class="wadah">
     <button type="button" data-tab="rekap" aria-current="page">Rekap</button>
     <button type="button" data-tab="database">Database</button>
+    <button type="button" data-tab="posisi">Posisi</button>
   </div>
 </nav>
 
@@ -665,21 +688,22 @@
 
     var tampil = semua.filter(function (p) {
       return saringDisplay === 'semua' || (saringDisplay === 'tercapai' ? p.tercapai : !p.tercapai);
-    }).sort(function (a, b) { return (a.jumlah - b.jumlah) || urutKode(a.unit, b.unit); });
+    });
 
     var ul = $('daftarDisplay');
     ul.textContent = '';
-    tampil.forEach(function (p) {
-      var tgl = Object.keys(p.tanggal).sort().map(hariBulan);
-      var li = buat('li', p.tercapai ? 'baris-unit tercapai' : 'baris-unit');
-      li.appendChild(buat('span', 'kode', p.unit));
-      var slot = buat('span', 'slot');
-      slot.setAttribute('role', 'img');
-      slot.setAttribute('aria-label', tgl.length ? 'Inspeksi tanggal ' + tgl.join(', ') : 'Belum diinspeksi');
-      for (var i = 0; i < d.target; i++) slot.appendChild(buat('b', i < tgl.length ? 'isi' : '', i < tgl.length ? tgl[i] : ''));
-      if (p.jumlah > d.target) slot.appendChild(buat('span', 'lebih', '+' + (p.jumlah - d.target)));
-      li.appendChild(slot);
-      li.appendChild(buat('span', 'status-unit', p.tercapai ? 'Selesai' : 'Sisa ' + (d.target - p.jumlah)));
+    kelompokPosisi(d, semua, false).forEach(function (g) {
+      var isi = g.unit.filter(function (p) { return tampil.indexOf(p) >= 0; });
+      if (!isi.length) return;
+      var sudah = g.unit.reduce(function (n, p) { return n + Math.min(p.jumlah, d.target); }, 0);
+      var li = buat('li', 'kelompok');
+      var kepala = buat('div', 'kepala-kelompok');
+      kepala.appendChild(buat('h2', '', g.nama));
+      kepala.appendChild(buat('span', '', Math.round(sudah / (g.unit.length * d.target) * 100) + '%'));
+      li.appendChild(kepala);
+      var daftar = buat('ul', 'daftar');
+      isi.forEach(function (p) { daftar.appendChild(barisDisplay(p, d)); });
+      li.appendChild(daftar);
       ul.appendChild(li);
     });
     if (!tampil.length) {
@@ -688,6 +712,35 @@
     var kini = new Date();
     $('diperbarui').textContent = 'Diperbarui pukul ' + String(kini.getHours()).padStart(2, '0') + '.' + String(kini.getMinutes()).padStart(2, '0');
   }
+
+  /** Mengelompokkan unit sesuai sheet Posisi. Unit tanpa posisi tampil paling akhir. */
+  function kelompokPosisi(d, semua, sertakanKosong) {
+    var daftar = d.posisi.map(function (n) { return { kunci: n, nama: n, unit: [] }; });
+    var tanpa = { kunci: '', nama: 'Belum ada posisi', unit: [] };
+    semua.forEach(function (p) {
+      var g = daftar.filter(function (x) { return x.kunci === d.posisiUnit[p.unit]; })[0] || tanpa;
+      g.unit.push(p);
+    });
+    return daftar.concat(tanpa).filter(function (g) {
+      g.unit.sort(function (a, b) { return urutKode(a.unit, b.unit); });
+      return g.unit.length || (sertakanKosong && g.kunci);
+    });
+  }
+
+  function barisDisplay(p, d) {
+    var tgl = Object.keys(p.tanggal).sort().map(hariBulan);
+    var li = buat('li', p.tercapai ? 'baris-unit tercapai' : 'baris-unit');
+    li.appendChild(buat('span', 'kode', p.unit));
+    var slot = buat('span', 'slot');
+    slot.setAttribute('role', 'img');
+    slot.setAttribute('aria-label', tgl.length ? 'Inspeksi tanggal ' + tgl.join(', ') : 'Belum diinspeksi');
+    for (var i = 0; i < d.target; i++) slot.appendChild(buat('b', i < tgl.length ? 'isi' : '', i < tgl.length ? tgl[i] : ''));
+    if (p.jumlah > d.target) slot.appendChild(buat('span', 'lebih', '+' + (p.jumlah - d.target)));
+    li.appendChild(slot);
+    li.appendChild(buat('span', 'status-unit', p.tercapai ? 'Selesai' : 'Sisa ' + (d.target - p.jumlah)));
+    return li;
+  }
+
 
   function bukaDisplay(b) {
     bulanDisplay = b;
@@ -738,6 +791,7 @@
     $('linkApp').textContent = PAKAI_GOOGLE || DEMO ? h.appUrl : location.origin + location.pathname;
     tampilkanRekap();
     tampilkanDatabase();
+    tampilkanPosisi();
   }
 
   function bukaBulan(b) {
@@ -976,6 +1030,69 @@
     return aksi;
   }
 
+  // ---------- Posisi unit (admin) ----------
+  function tampilkanPosisi() {
+    var d = dataAdmin;
+    if (!d) return;
+    var kotak = $('daftarPosisi');
+    kotak.textContent = '';
+    kelompokPosisi(d, ringkas(d), true).forEach(function (g) {
+      var bagian = buat('section', 'kelompok-admin');
+      var kepala = buat('div', 'kepala-kelompok');
+      kepala.appendChild(buat('h2', '', g.nama));
+      if (g.unit.length) {
+        kepala.appendChild(buat('span', '', g.unit.length + ' unit'));
+      } else {
+        var hapus = buat('button', 'hapus-posisi', 'Hapus posisi');
+        hapus.type = 'button';
+        hapus.addEventListener('click', function () {
+          hapus.disabled = true;
+          ubahPosisi('hapusPosisi', { nama: g.kunci }, 'Posisi ' + g.nama + ' dihapus.');
+        });
+        kepala.appendChild(hapus);
+      }
+      bagian.appendChild(kepala);
+
+      var ul = buat('ul', 'daftar');
+      g.unit.forEach(function (p) {
+        var li = buat('li', 'baris-posisi');
+        li.appendChild(buat('span', 'kode', p.unit));
+        var pilih = buat('select');
+        pilih.setAttribute('aria-label', 'Posisi unit ' + p.unit);
+        d.posisi.concat('').forEach(function (n) {
+          var o = buat('option', '', n || 'Belum ada posisi');
+          o.value = n;
+          pilih.appendChild(o);
+        });
+        pilih.value = g.kunci;
+        pilih.addEventListener('change', function () {
+          pilih.disabled = true;
+          ubahPosisi('simpanPosisi', { unit: p.unit, posisi: pilih.value },
+            p.unit + ' dipindah ke ' + (pilih.value || 'Belum ada posisi') + '.');
+        });
+        li.appendChild(pilih);
+        ul.appendChild(li);
+      });
+      bagian.appendChild(ul);
+      kotak.appendChild(bagian);
+    });
+  }
+
+  function ubahPosisi(fungsi, isi, teksBerhasil) {
+    isi.password = password;
+    isi.bulan = bulanAdmin;
+    return panggil(fungsi, isi).then(function (h) {
+      if (!h.ok) { tampilkanPesan(h.message, true); tampilkanPosisi(); return false; }
+      terimaAdmin(h);
+      tampilkanPesan(teksBerhasil);
+      return true;
+    }).catch(function () {
+      tampilkanPesan('Perubahan belum tersimpan. Periksa sinyal lalu coba lagi.', true);
+      tampilkanPosisi();
+      return false;
+    });
+  }
+
   function gantiTab(tab) {
     document.querySelectorAll('#navAdmin button').forEach(function (b) {
       if (b.getAttribute('data-tab') === tab) b.setAttribute('aria-current', 'page');
@@ -983,6 +1100,8 @@
     });
     $('tabRekap').hidden = tab !== 'rekap';
     $('tabDatabase').hidden = tab !== 'database';
+    $('tabPosisi').hidden = tab !== 'posisi';
+    $('navBulan').hidden = tab === 'posisi';
     $('pesan').hidden = true;
     window.scrollTo(0, 0);
   }
@@ -1042,6 +1161,14 @@
   $('form').addEventListener('input', function (e) { if (e.target.id !== 'tanggal') $('salah').hidden = true; });
   $('tanggal').addEventListener('input', perbaruiInfo);
   $('formAdmin').addEventListener('submit', masukAdmin);
+  $('formPosisi').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var nama = $('namaPosisi').value.trim();
+    if (!nama) { tampilkanPesan('Tulis nama posisi.', true); return; }
+    ubahPosisi('tambahPosisi', { nama: nama }, 'Posisi ' + nama + ' ditambahkan.').then(function (ok) {
+      if (ok) $('namaPosisi').value = '';
+    });
+  });
   $('tutup').addEventListener('click', function () { $('lembar').close(); });
   $('salinLink').addEventListener('click', salinLink);
   $('gantiContoh').addEventListener('click', function () { aturMode(modeAdmin ? 'mekanik' : 'admin'); });
@@ -1095,12 +1222,18 @@
       { time: '13:40', date: tgl(2), unit: 'L46', mech: 'Mekanik B', hm: '8320', note: 'Hose hidrolik rembes' },
       { time: '14:15', date: tgl(3), unit: 'D31', mech: 'Mekanik A', hm: '6104', note: '' }
     ];
+    var posisi = ['SET 2', 'FC. VANGUARD'];
+    var posisiUnit = { D42: 'SET 2', D51: 'SET 2', D61: 'SET 2', L55: 'SET 2', D28: 'FC. VANGUARD', D40: 'FC. VANGUARD', L36: 'FC. VANGUARD' };
     function bulan(b) {
       var m = b || bulanIni;
       return {
         today: today, minDate: bulanIni + '-01', month: m, target: 3, requireHm: true, units: units,
+        posisi: posisi, posisiUnit: posisiUnit,
         records: records.filter(function (r) { return r.date.slice(0, 7) === m; })
       };
+    }
+    function hasilAdmin(i) {
+      return { ok: true, data: bulan(i.bulan), sheetUrl: 'https://docs.google.com/spreadsheets/', appUrl: 'Link muncul di sini setelah aplikasi dipasang' };
     }
     return {
       getData: function (b) { return bulan(b); },
@@ -1112,6 +1245,9 @@
         records.push({ time: '07:00', inputDate: today, date: i.tanggal, unit: i.unit, mech: nama, hm: String(i.hm), note: i.catatan });
         return { ok: true, data: bulan() };
       },
+      simpanPosisi: function (i) { posisiUnit[i.unit] = i.posisi; return hasilAdmin(i); },
+      tambahPosisi: function (i) { posisi.push(i.nama); return hasilAdmin(i); },
+      hapusPosisi: function (i) { posisi = posisi.filter(function (n) { return n !== i.nama; }); return hasilAdmin(i); },
       editInspeksi: function (i) {
         records.forEach(function (r) {
           if (r.date === i.date && r.unit === i.unit && r.mech === i.mech) {
