@@ -720,7 +720,7 @@
     var tercapai = semua.filter(function (p) { return p.tercapai; }).length;
     var targetTotal = semua.length * d.target;
     var inspeksi = semua.reduce(function (n, p) { return n + p.jumlah; }, 0);
-    $(idUnit).textContent = tercapai + ' dari ' + semua.length + ' unit sudah ' + d.target + 'x';
+    $(idUnit).textContent = tercapai + ' dari ' + semua.length + ' unit sudah selesai (' + d.target + 'x inspeksi)';
     var teks = 'Inspeksi ' + inspeksi + ' dari ' + targetTotal;
     if (d.month === d.today.slice(0, 7)) {
       var akhir = new Date(Number(d.month.slice(0, 4)), Number(d.month.slice(5, 7)), 0).getDate();
@@ -856,7 +856,10 @@
     var xT = P + 28 + Math.max(250, c.measureText(r.persen + '%').width + 36);
     var tercapai = r.hitung.filter(function (p) { return p.tercapai; }).length;
     c.fillStyle = '#FFFFFF'; c.font = huruf(700, 40, true);
-    c.fillText(tercapai + ' dari ' + r.hitung.length + ' unit sudah ' + d.target + 'x', xT, yK + 72);
+    var teksUnit = tercapai + ' dari ' + r.hitung.length + ' unit sudah selesai (' + d.target + 'x inspeksi)';
+    var ruangTeks = W - P - 28 - xT;
+    if (c.measureText(teksUnit).width > ruangTeks) c.font = huruf(700, Math.floor(40 * ruangTeks / c.measureText(teksUnit).width), true);
+    c.fillText(teksUnit, xT, yK + 72);
     c.fillStyle = '#D5D9DD'; c.font = huruf(500, 28, false);
     c.fillText('Inspeksi ' + r.sudah + ' dari ' + r.target, xT, yK + 116);
     kotak(c, P + 28, yK + 160, W - P * 2 - 56, 14, 7, '#474C52');
