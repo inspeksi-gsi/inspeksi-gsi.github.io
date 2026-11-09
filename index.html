@@ -252,6 +252,22 @@
   @media (prefers-reduced-motion: reduce) {
     .lubang i.baru { animation: none; }
   }
+  /* Layar lebar (laptop/PC): pakai seluruh lebar layar, isi disusun berkolom */
+  @media (min-width: 900px) {
+    .wadah, body.modeLebar .wadah { max-width: none; }
+    main { padding: 20px 32px 24px; }
+    .kepala { padding-left: 32px; padding-right: 32px; }
+    .cari { max-width: 520px; }
+    #daftarUnit, #daftarRekap, #daftarData, #daftarOrang {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; align-items: start;
+    }
+    #daftarDisplay { grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
+    #daftarPosisi { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 0 24px; align-items: start; }
+    #formPosisi { max-width: 640px; }
+    .masuk { max-width: 460px; margin: 0 auto; }
+    .tautan { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    nav .wadah, #navAdmin .wadah { max-width: 900px; }
+  }
 </style>
 </head>
 <body>
