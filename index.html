@@ -376,7 +376,7 @@
       </div>
       <div class="cari">
         <label class="label" for="cariData">Cari inspeksi</label>
-        <input type="search" id="cariData" placeholder="Unit, nama, atau catatan" autocomplete="off">
+        <input type="search" id="cariData" placeholder="Unit, nama, No. WO, atau catatan" autocomplete="off">
       </div>
       <p class="jumlah" id="jumlahData"></p>
       <ul class="daftar" id="daftarData"></ul>
@@ -412,6 +412,10 @@
     <div class="ruas">
       <label class="label" for="tanggal">Tanggal inspeksi</label>
       <input type="date" id="tanggal">
+    </div>
+    <div class="ruas">
+      <label class="label" for="wo">No. WO</label>
+      <input id="wo" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Wajib diisi">
     </div>
     <div class="ruas">
       <label class="label" for="hm" id="labelHm">HM unit</label>
@@ -595,6 +599,7 @@
     }
     unitTerbuka = p.unit;
     $('judulUnit').textContent = p.unit;
+    $('wo').value = '';
     $('hm').value = '';
     $('catatan').value = '';
     $('salah').hidden = true;
@@ -635,7 +640,9 @@
     var hm = $('hm').value.trim();
     var catatan = $('catatan').value.trim();
     var tanggal = $('tanggal').value;
+    var wo = $('wo').value.trim();
     if (!tanggal) { tampilkanSalah('Pilih tanggal inspeksi.'); $('tanggal').focus(); return; }
+    if (!wo) { tampilkanSalah('Isi nomor WO.'); $('wo').focus(); return; }
     if (data.requireHm && !hm) { tampilkanSalah('Isi HM unit.'); $('hm').focus(); return; }
 
     var unit = unitTerbuka;
@@ -645,7 +652,7 @@
     $('salah').hidden = true;
 
     panggil('submitAbsen', {
-      mekanik: $('nama').value, unit: unit, tanggal: tanggal, hm: hm, catatan: catatan
+      mekanik: $('nama').value, unit: unit, tanggal: tanggal, wo: wo, hm: hm, catatan: catatan
     }).then(function (hasil) {
       if (!hasil.ok) { tampilkanSalah(hasil.message); return; }
       $('lembar').close();
@@ -1104,7 +1111,7 @@
           .forEach(function (r) {
             var b = buat('li');
             b.appendChild(buat('b', '', tanggalPanjang(r.date) + (r.mech ? ', ' + r.mech : '')));
-            b.appendChild(buat('small', '', 'HM ' + (r.hm || 'tidak diisi')));
+            b.appendChild(buat('small', '', 'No. WO ' + (r.wo || 'tidak diisi') + ' \u00b7 HM ' + (r.hm || 'tidak diisi')));
             if (r.note) b.appendChild(buat('small', '', r.note));
             rinci.appendChild(b);
           });
@@ -1136,7 +1143,7 @@
     if (!d) return;
     var kata = $('cariData').value.trim().toLowerCase();
     var isi = d.records.filter(function (r) {
-      return !kata || [r.unit, r.mech, r.note, r.date].join(' ').toLowerCase().indexOf(kata) >= 0;
+      return !kata || [r.unit, r.mech, r.note, r.date, r.wo].join(' ').toLowerCase().indexOf(kata) >= 0;
     }).sort(function (a, b) {
       var x = b.date + b.time, y = a.date + a.time;
       return x < y ? -1 : x > y ? 1 : 0;
@@ -1153,7 +1160,7 @@
       li.appendChild(atas);
       li.appendChild(buat('p', 'nama', r.mech || 'Nama belum diisi'));
       if (r.inputDate) li.appendChild(buat('p', 'kecil', 'Diinput ' + tanggalPanjang(r.inputDate) + (r.time ? ', ' + r.time : '')));
-      li.appendChild(buat('p', 'kecil', 'HM ' + (r.hm || 'tidak diisi')));
+      li.appendChild(buat('p', 'kecil', 'No. WO ' + (r.wo || 'tidak diisi') + ' \u00b7 HM ' + (r.hm || 'tidak diisi')));
       if (r.note) li.appendChild(buat('p', 'kecil', r.note));
       li.appendChild(buatAksi(r));
       ul.appendChild(li);
@@ -1209,6 +1216,11 @@
       tanggal.max = dataAdmin.today;
       tanggal.value = r.date;
 
+      var wo = ruas('No. WO', buat('input'));
+      wo.type = 'text';
+      wo.maxLength = 40;
+      wo.value = r.wo || '';
+
       var unit = ruas('Unit', buat('select'));
       var pilihan = dataAdmin.units.indexOf(r.unit) < 0 ? [r.unit].concat(dataAdmin.units) : dataAdmin.units;
       pilihan.slice().sort(urutKode).forEach(function (u) {
@@ -1254,7 +1266,7 @@
         salah.hidden = true;
         panggil('editInspeksi', {
           password: password, row: r.row, unit: r.unit, date: r.date, mech: r.mech, bulan: bulanAdmin,
-          baru: { tanggal: tanggal.value, unit: unit.value, mekanik: nama.value, hm: hm.value.trim(), catatan: catatan.value }
+          baru: { tanggal: tanggal.value, unit: unit.value, mekanik: nama.value, wo: wo.value.trim(), hm: hm.value.trim(), catatan: catatan.value }
         }).then(function (h) {
           if (!h.ok) {
             salah.textContent = h.message;
@@ -1482,7 +1494,7 @@
     function tgl(n) { return bulanIni + '-' + String(Math.max(1, Math.min(n, hari))).padStart(2, '0'); }
     var units = ['D09','D10','D12','D13','D21','D23','D24','D28','D31','D33','D39','D40','D41','D42','D45','D49','D50','D51','D56','D57','D58','D59','D60','D61','L36','L37','L38','L44','L46','L52','L53','L54','L55','D04','D14','D15','D35','D47','D48','L16','L43'];
     var records = [
-      { time: '08:10', date: tgl(1), unit: 'D23', mech: 'Mekanik A', hm: '12450', note: '' },
+      { time: '08:10', date: tgl(1), unit: 'D23', mech: 'Mekanik A', hm: '12450', note: '', wo: 'WO-1021' },
       { time: '09:05', date: tgl(2), unit: 'D23', mech: 'Mekanik B', hm: '12461', note: '' },
       { time: '10:20', date: tgl(3), unit: 'D23', mech: 'Mekanik A', hm: '12473', note: '' },
       { time: '13:40', date: tgl(2), unit: 'L46', mech: 'Mekanik B', hm: '8320', note: 'Hose hidrolik rembes' },
@@ -1508,7 +1520,7 @@
         if (records.some(function (r) { return r.date === i.tanggal && r.unit === i.unit && r.mech === nama; })) {
           return { ok: false, message: 'Anda sudah input inspeksi unit ' + i.unit + ' pada tanggal itu.' };
         }
-        records.push({ time: '07:00', inputDate: today, date: i.tanggal, unit: i.unit, mech: nama, hm: String(i.hm), note: i.catatan });
+        records.push({ time: '07:00', inputDate: today, date: i.tanggal, unit: i.unit, mech: nama, hm: String(i.hm), note: i.catatan, wo: i.wo });
         return { ok: true, data: bulan() };
       },
       simpanPosisi: function (i) { posisiUnit[i.unit] = i.posisi; return hasilAdmin(i); },
@@ -1517,7 +1529,7 @@
       editInspeksi: function (i) {
         records.forEach(function (r) {
           if (r.date === i.date && r.unit === i.unit && r.mech === i.mech) {
-            r.date = i.baru.tanggal; r.unit = i.baru.unit; r.mech = rapikanNama(i.baru.mekanik); r.hm = i.baru.hm; r.note = i.baru.catatan;
+            r.date = i.baru.tanggal; r.unit = i.baru.unit; r.mech = rapikanNama(i.baru.mekanik); r.hm = i.baru.hm; r.note = i.baru.catatan; r.wo = i.baru.wo;
           }
         });
         return { ok: true, data: bulan(i.bulan), sheetUrl: 'https://docs.google.com/spreadsheets/', appUrl: 'Link muncul di sini setelah aplikasi dipasang' };
