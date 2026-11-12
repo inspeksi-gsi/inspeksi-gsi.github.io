@@ -68,7 +68,11 @@
     background: var(--putih); border: 2px solid var(--grafit); border-radius: 6px;
   }
   textarea { min-height: 84px; resize: vertical; }
-  #nama { font-weight: 600; }
+  #nama {
+    width: 100%; min-height: 50px; padding: 10px 12px; font-weight: 600;
+    background: var(--putih); border: 2px solid var(--grafit); border-radius: 6px;
+  }
+  @media (min-width: 900px) { #nama { max-width: 520px; } }
 
   main { padding: 14px 12px 16px; }
   .cari { margin-bottom: 12px; }
@@ -289,8 +293,7 @@
     </div>
     <div id="pilihNama" hidden>
       <label class="label" for="nama">Nama mekanik</label>
-      <input type="text" id="nama" list="daftarNama" maxlength="60" placeholder="Tulis nama Anda" autocomplete="name" autocapitalize="words">
-      <datalist id="daftarNama"></datalist>
+      <select id="nama"><option value="">Pilih nama Anda</option></select>
     </div>
   </div>
   <div class="strip"></div>
@@ -590,9 +593,9 @@
   }
 
   function bukaLembar(p) {
-    var nama = rapikanNama($('nama').value);
-    if (nama.length < 2) {
-      tampilkanPesan('Tulis nama Anda dulu.', true);
+    var nama = $('nama').value;
+    if (!nama) {
+      tampilkanPesan('Pilih nama Anda dulu.', true);
       window.scrollTo(0, 0);
       $('nama').focus();
       return;
@@ -658,9 +661,8 @@
       $('lembar').close();
       data = hasil.data;
       lubangBaru = unit;
-      $('nama').value = rapikanNama($('nama').value);
       simpanNama();
-      isiSaranNama();
+      isiDaftarNama();
       $('cari').value = '';
       tampilkanAbsen();
       window.scrollTo(0, 0);
@@ -677,23 +679,26 @@
     try { localStorage.setItem(KUNCI_NAMA, $('nama').value); } catch (e) {}
   }
 
-  function isiSaranNama() {
-    var unik = {};
-    data.records.forEach(function (r) { if (r.mech) unik[r.mech] = true; });
-    var dl = $('daftarNama');
-    dl.textContent = '';
-    Object.keys(unik).sort().forEach(function (n) {
-      var o = buat('option');
+  /** Mengisi pilihan nama dari sheet Mekanik dan memilih kembali nama terakhir di HP ini. */
+  function isiDaftarNama() {
+    var pilih = $('nama');
+    var sekarang = pilih.value;
+    if (!sekarang) { try { sekarang = localStorage.getItem(KUNCI_NAMA) || ''; } catch (e) {} }
+    pilih.length = 1;
+    (data.mekanik || []).forEach(function (n) {
+      var o = buat('option', '', n);
       o.value = n;
-      dl.appendChild(o);
+      pilih.appendChild(o);
     });
+    var cocok = (data.mekanik || []).filter(function (n) { return samaNama(n, sekarang); })[0];
+    pilih.value = cocok || '';
   }
 
   function muat() {
     return panggil('getData').then(function (d) {
       data = d;
       $('subjudul').textContent = labelBulan(d.month) + ', target ' + d.target + 'x per unit';
-      isiSaranNama();
+      isiDaftarNama();
       tampilkanAbsen();
     }).catch(function (err) {
       $('subjudul').textContent = 'Data gagal dimuat';
@@ -1230,10 +1235,15 @@
       });
       unit.value = r.unit;
 
-      var nama = ruas('Nama mekanik', buat('input'));
-      nama.type = 'text';
-      nama.maxLength = 60;
-      nama.value = r.mech;
+      var nama = ruas('Nama mekanik', buat('select'));
+      var opsiNama = (dataAdmin.mekanik || []).slice();
+      if (r.mech && opsiNama.indexOf(r.mech) < 0) opsiNama.unshift(r.mech);
+      [''].concat(opsiNama).forEach(function (n) {
+        var o = buat('option', '', n || 'Belum diisi');
+        o.value = n;
+        nama.appendChild(o);
+      });
+      nama.value = r.mech || '';
 
       var hm = ruas('HM unit', buat('input'));
       hm.inputMode = 'decimal';
@@ -1430,8 +1440,7 @@
   }
 
   // ---------- Peristiwa ----------
-  $('nama').addEventListener('input', function () { simpanNama(); tampilkanAbsen(); });
-  $('nama').addEventListener('blur', function () { $('nama').value = rapikanNama($('nama').value); simpanNama(); });
+  $('nama').addEventListener('change', function () { simpanNama(); tampilkanAbsen(); });
   $('cari').addEventListener('input', tampilkanAbsen);
   $('cariData').addEventListener('input', tampilkanDatabase);
   $('form').addEventListener('submit', kirim);
@@ -1506,7 +1515,7 @@
       var m = b || bulanIni;
       return {
         today: today, minDate: bulanIni + '-01', month: m, target: 3, requireHm: true, units: units,
-        posisi: posisi, posisiUnit: posisiUnit,
+        posisi: posisi, posisiUnit: posisiUnit, mekanik: ['Aldi', 'Fajar', 'Supriyanto', 'Andi', 'Wahyu', 'Dwi Atma', 'Iman', 'Ihsan', 'Hipni', 'Yadi', 'Bakhtiar', 'Ahmad', 'Maman', 'Alfian', 'Budi Santoso', 'Mekanik A', 'Mekanik B', 'Mekanik C'],
         records: records.filter(function (r) { return r.date.slice(0, 7) === m; })
       };
     }
@@ -1546,7 +1555,6 @@
   })();
 
   // ---------- Mulai ----------
-  try { $('nama').value = localStorage.getItem(KUNCI_NAMA) || ''; } catch (e) {}
   if (DEMO) {
     $('demo').hidden = false;
     aturMode(location.hash === '#admin' ? 'admin' : location.hash === '#display' ? 'display' : 'mekanik');
